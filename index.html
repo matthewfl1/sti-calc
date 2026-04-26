@@ -2,51 +2,89 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>СТРОЙТЕХИНВЕСТ | Система</title>
+    <title>ООО СТРОЙТЕХИНВЕСТ | Расчетный модуль</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; }
-        header { background: #004a99; color: white; padding: 20px 5%; font-size: 24px; font-weight: 800; }
-        .main { display: grid; grid-template-columns: 1fr 350px; gap: 30px; padding: 30px 5%; }
-        .card { background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
-        .btn-pick { background: #004a99; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; width: 100%; }
-        iframe { width: 100%; height: 450px; border: none; }
-        .summary { background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #e2e8f0; }
-        .total { font-size: 22px; color: #004a99; font-weight: 900; margin-top: 10px; }
+        :root { --blue: #004a99; --text: #1e293b; --light: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; background: var(--light); margin: 0; color: var(--text); }
+        header { background: #fff; border-bottom: 2px solid var(--blue); padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 22px; font-weight: 800; color: var(--blue); letter-spacing: -0.5px; }
+        
+        .container { display: grid; grid-template-columns: 1fr 360px; gap: 30px; padding: 30px 5%; max-width: 1400px; margin: auto; }
+        
+        .catalog-section h2 { font-size: 18px; margin-bottom: 20px; border-left: 4px solid var(--blue); padding-left: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        
+        .product-card { background: #fff; padding: 16px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; flex-direction: column; }
+        .product-card h4 { margin: 0 0 8px; font-size: 15px; }
+        .product-card p { font-size: 12px; color: #64748b; flex-grow: 1; margin-bottom: 16px; }
+        
+        .btn-select { 
+            background: #fff; border: 1px solid var(--blue); color: var(--blue); 
+            padding: 8px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: 0.2s;
+        }
+        .btn-select:hover { background: var(--blue); color: #fff; }
+
+        .sticky-sidebar { position: sticky; top: 20px; }
+        iframe { width: 100%; height: 420px; border: none; margin-bottom: 20px; }
+        
+        .order-summary { background: #fff; padding: 20px; border-radius: 4px; border: 1px solid #e2e8f0; }
+        .order-summary h3 { font-size: 14px; margin-top: 0; color: #64748b; }
+        .order-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
+        .final-total { font-size: 24px; font-weight: 800; color: var(--blue); margin-top: 15px; }
     </style>
 </head>
 <body>
-    <header>СТРОЙТЕХИНВЕСТ</header>
-    <div class="main">
-        <div>
-            <h2>Каталог</h2>
-            <div class="card">
-                <h4>Сетка сварная 1</h4>
-                <p>Вес: 2.51 кг. ГОСТ 23279.</p>
-                <button class="btn-pick" onclick="sel('Сетка сварная 1')">ВЫБРАТЬ</button>
+    <header>
+        <div class="brand">СТРОЙТЕХИНВЕСТ</div>
+        <div style="font-size: 12px; font-weight: 600;">ERP: Модуль конфигурации v1.4</div>
+    </header>
+
+    <div class="container">
+        <main class="catalog-section">
+            <h2>Номенклатура продукции</h2>
+            <div class="grid">
+                <div class="product-card">
+                    <h4>Сетка сварная (2.51 кг/к)</h4>
+                    <p>Сетка арматурная для фундаментных работ. Соответствует ГОСТ 23279.</p>
+                    <button class="btn-select" onclick="sel('Сетка сварная (2.51 кг/к)')">ВЫБРАТЬ</button>
+                </div>
+                <div class="product-card">
+                    <h4>Болт М16х60 ГОСТ</h4>
+                    <p>Болт высокопрочный, класс 10.9. Применяется в стальных конструкциях.</p>
+                    <button class="btn-select" onclick="sel('Болт М16х60 ГОСТ')">ВЫБРАТЬ</button>
+                </div>
+                <div class="product-card">
+                    <h4>Канат 12.0-Г-В-Л-О</h4>
+                    <p>Стальной канат ГОСТ 2688-80. Для грузоподъемных механизмов.</p>
+                    <button class="btn-select" onclick="sel('Канат 12.0-Г-В-Л-О')">ВЫБРАТЬ</button>
+                </div>
+                <div class="product-card">
+                    <h4>Гайка М24 ГОСТ</h4>
+                    <p>Гайка шестигранная с метрической резьбой. Высокая точность исполнения.</p>
+                    <button class="btn-select" onclick="sel('Гайка М24 ГОСТ')">ВЫБРАТЬ</button>
+                </div>
             </div>
-            <div class="card">
-                <h4>Болт М16х60</h4>
-                <p>Вес: 0.138 кг. Высокопрочный.</p>
-                <button class="btn-pick" onclick="sel('Болт М16х60')">ВЫБРАТЬ</button>
-            </div>
-        </div>
-        <aside>
+        </main>
+
+        <aside class="sticky-sidebar">
             <iframe id="calc" src="widget.html"></iframe>
-            <div class="summary">
-                <b>ИТОГ РАСЧЕТА:</b>
-                <div id="list" style="font-size: 12px; color: #666; margin: 10px 0;"></div>
-                <div class="total"><span id="total">0</span> ₽</div>
+            <div class="order-summary">
+                <h3>ТЕКУЩИЙ РАСЧЕТ</h3>
+                <div id="list"></div>
+                <div class="final-total"><span id="total">0</span> ₽</div>
             </div>
         </aside>
     </div>
+
     <script>
-        let sum = 0;
+        let totalSum = 0;
         function sel(n) { document.getElementById('calc').contentWindow.postMessage({type:'SEL', name:n}, '*'); }
         window.addEventListener('message', e => {
             if(e.data.type === 'ADD') {
-                document.getElementById('list').innerHTML += `<div>${e.data.name} x${e.data.qty} — ${e.data.price} ₽</div>`;
-                sum += e.data.price;
-                document.getElementById('total').innerText = sum.toLocaleString();
+                const list = document.getElementById('list');
+                list.innerHTML += `<div class="order-item"><span>${e.data.name} (x${e.data.qty})</span><b>${e.data.price.toLocaleString()} ₽</b></div>`;
+                totalSum += e.data.price;
+                document.getElementById('total').innerText = totalSum.toLocaleString();
             }
         });
     </script>

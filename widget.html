@@ -3,134 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        :root { --blue: #004a99; --border: #e2e8f0; }
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: #fff; overflow: hidden; }
-        .widget-box { border: 1px solid var(--border); border-radius: 4px; padding: 15px; position: relative; }
-        .header { font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 12px; text-transform: uppercase; }
-        
-        .search-container { position: relative; margin-bottom: 15px; }
-        label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        
-        .search-input { 
-            width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--border); 
-            border-radius: 4px; font-size: 13px; box-sizing: border-box;
-        }
-        
-        /* Выпадающий список подсказок */
-        .suggestions {
-            position: absolute; width: 100%; background: #fff; border: 1px solid var(--border);
-            border-top: none; z-index: 100; max-height: 180px; overflow-y: auto; display: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .suggestion-item { padding: 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
-        .suggestion-item:hover { background: #f8fafc; color: var(--blue); }
-
-        .info-panel { background: #f8fafc; border-radius: 4px; padding: 12px; border-left: 3px solid var(--blue); }
-        .info-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .total-price { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 8px; }
-
-        .btn-add { 
-            background: var(--blue); color: white; border: none; width: 100%; height: 40px; 
-            border-radius: 4px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 12px;
-        }
+        :root { --blue: #004a99; --border: #cbd5e1; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 12px; background: #fff; color: #1e293b; overflow: hidden; }
+        .w-card { border: 1.5px solid var(--blue); border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .label { display: block; font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+        .input-group { position: relative; margin-bottom: 16px; }
+        input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,74,153,0.1); }
+        .dropdown { position: absolute; width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 0 0 6px 6px; z-index: 100; max-height: 220px; overflow-y: auto; display: none; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .d-item { padding: 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9; line-height: 1.4; }
+        .d-item:hover { background: var(--bg); color: var(--blue); }
+        .calc-res { background: var(--bg); border-radius: 6px; padding: 14px; margin-top: 10px; border-left: 4px solid var(--blue); }
+        .res-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+        .total-val { font-size: 24px; font-weight: 900; color: var(--blue); text-align: right; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+        .btn-add { background: var(--blue); color: white; border: none; width: 100%; height: 44px; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: 15px; text-transform: uppercase; transition: 0.3s; }
+        .btn-add:hover { background: #003366; transform: translateY(-1px); }
+        .btn-add:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+        .sync-info { font-size: 10px; text-align: center; margin-top: 10px; color: #94a3b8; font-weight: 600; }
     </style>
 </head>
 <body>
-<div class="widget-box">
-    <div class="header">Конфигуратор метизов</div>
+
+<div class="w-card">
+    <div style="font-size: 14px; font-weight: 800; color: var(--blue); margin-bottom: 15px; text-align: center;">КОНФИГУРАТОР STI</div>
     
-    <div class="search-container">
-        <label>Поиск по названию или ГОСТ</label>
-        <input type="text" id="searchInput" class="search-input" placeholder="Напр: 23279 или Сетка..." oninput="showSuggestions(this.value)">
-        <div id="suggestions" class="suggestions"></div>
+    <div class="input-group">
+        <label>Поиск продукции / ГОСТ</label>
+        <input type="text" id="findInput" placeholder="Подключение к базе..." disabled oninput="doSearch(this.value)">
+        <div id="dropBox" class="dropdown"></div>
     </div>
 
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <div style="flex: 1;">
-            <label id="unitLabel">Кол-во</label>
-            <input type="number" id="qty" class="search-input" value="1" min="1" oninput="calculate()">
-        </div>
+    <div style="margin-bottom: 15px;">
+        <label id="qLabel">Количество</label>
+        <input type="number" id="qtyVal" value="1" min="1" oninput="recalc()">
     </div>
 
-    <div class="info-panel">
-        <div class="info-row"><span>Вес ед.:</span> <b id="wUnit">0.000</b> кг</div>
-        <div class="info-row"><span>Общий вес:</span> <b id="wTotal">0.000</b> кг</div>
-        <div class="total-price"><span id="pTotal">0</span> ₽</div>
+    <div class="calc-res">
+        <div class="res-row"><span>Вес ед:</span> <b id="mUnit">0.000</b> кг</div>
+        <div class="res-row"><span>Общий вес:</span> <b id="mTotal">0.000</b> кг</div>
+        <div class="total-val"><span id="pTotal">0</span> ₽</div>
     </div>
 
-    <button class="btn-add" onclick="sendToSite()">ДОБАВИТЬ В РАСЧЕТ</button>
+    <button id="addBtn" class="btn-add" onclick="pushToSite()" disabled>Добавить в расчет</button>
+    <div id="statusTxt" class="sync-info">СИНХРОНИЗАЦИЯ...</div>
 </div>
 
 <script>
-    // РЕАЛЬНАЯ БАЗА ДАННЫХ (из твоего скриншота)
-    const products = [
-        { name: "Сетка сварная ГОСТ 23279", weight: 2.510, price: 285, unit: "карта" },
-        { name: "Сетка сварная тяжелая ГОСТ 23279", weight: 4.350, price: 450, unit: "карта" },
-        { name: "Проволока 3.0 ВР-1 ГОСТ 6727", weight: 0.052, price: 85, unit: "метр" },
-        { name: "Проволока 4.0 ВР-1 ГОСТ 6727", weight: 0.092, price: 110, unit: "метр" },
-        { name: "Болт М16х60 ГОСТ 22353", weight: 0.138, price: 115, unit: "шт" },
-        { name: "Болт М24х100 ГОСТ 22353", weight: 0.512, price: 180, unit: "шт" },
-        { name: "Гайка М16 ГОСТ 5915", weight: 0.034, price: 55, unit: "шт" },
-        { name: "Гайка М24 ГОСТ 5915", weight: 0.110, price: 110, unit: "шт" },
-        { name: "Канат 12.0-Г-В-Л-О ГОСТ 2688", weight: 0.528, price: 520, unit: "метр" }
-    ];
+    // Твоя ссылка, преобразованная в формат CSV для прямого чтения данных
+    const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
+    
+    let itemsDB = [];
+    let activeItem = null;
 
-    let selectedProduct = null;
+    async function fetchData() {
+        try {
+            const r = await fetch(SHEET_CSV);
+            const t = await r.text();
+            // Разбор строк таблицы (Категория, Наименование, Вес, Ед.изм, Цена)
+            itemsDB = t.split('\n').slice(1).map(l => {
+                const p = l.split(',');
+                return { 
+                    name: p[1]?.trim(), 
+                    weight: parseFloat(p[2]), 
+                    unit: p[3]?.trim(), 
+                    price: parseFloat(p[4]) 
+                };
+            }).filter(i => i.name && !isNaN(i.price));
 
-    function showSuggestions(val) {
-        const container = document.getElementById('suggestions');
-        container.innerHTML = '';
-        if (val.length < 1) { container.style.display = 'none'; return; }
-
-        const filtered = products.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
-        
-        if (filtered.length > 0) {
-            filtered.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerText = p.name;
-                div.onclick = () => selectProduct(p);
-                container.appendChild(div);
-            });
-            container.style.display = 'block';
-        } else {
-            container.style.display = 'none';
+            document.getElementById('findInput').disabled = false;
+            document.getElementById('findInput').placeholder = "Введите название или ГОСТ";
+            document.getElementById('statusTxt').innerText = "БАЗА ДАННЫХ ОБНОВЛЕНА";
+        } catch (e) {
+            document.getElementById('statusTxt').innerText = "ОШИБКА ДОСТУПА";
         }
     }
 
-    function selectProduct(p) {
-        selectedProduct = p;
-        document.getElementById('searchInput').value = p.name;
-        document.getElementById('suggestions').style.display = 'none';
-        calculate();
+    function doSearch(v) {
+        const d = document.getElementById('dropBox');
+        d.innerHTML = '';
+        if (v.length < 1) { d.style.display = 'none'; return; }
+        const res = itemsDB.filter(i => i.name.toLowerCase().includes(v.toLowerCase()));
+        if (res.length > 0) {
+            res.forEach(i => {
+                const div = document.createElement('div');
+                div.className = 'd-item';
+                div.innerText = i.name;
+                div.onclick = () => {
+                    activeItem = i;
+                    document.getElementById('findInput').value = i.name;
+                    d.style.display = 'none';
+                    document.getElementById('addBtn').disabled = false;
+                    recalc();
+                };
+                d.appendChild(div);
+            });
+            d.style.display = 'block';
+        } else { d.style.display = 'none'; }
     }
 
-    function calculate() {
-        if (!selectedProduct) return;
-        const q = parseFloat(document.getElementById('qty').value) || 0;
-        document.getElementById('unitLabel').innerText = "Кол-во (" + selectedProduct.unit + ")";
-        document.getElementById('wUnit').innerText = selectedProduct.weight.toFixed(3);
-        document.getElementById('wTotal').innerText = (selectedProduct.weight * q).toFixed(3);
-        document.getElementById('pTotal').innerText = (selectedProduct.price * q).toLocaleString();
+    function recalc() {
+        if (!activeItem) return;
+        const q = parseFloat(document.getElementById('qtyVal').value) || 0;
+        document.getElementById('qLabel').innerText = "Количество (" + activeItem.unit + ")";
+        document.getElementById('mUnit').innerText = activeItem.weight.toFixed(3);
+        document.getElementById('mTotal').innerText = (activeItem.weight * q).toFixed(3);
+        document.getElementById('pTotal').innerText = (activeItem.price * q).toLocaleString();
     }
 
-    function sendToSite() {
-        if (!selectedProduct) return;
+    function pushToSite() {
+        if (!activeItem) return;
         window.parent.postMessage({ 
             type: 'ADD', 
-            name: selectedProduct.name, 
-            qty: document.getElementById('qty').value, 
+            name: activeItem.name, 
+            qty: document.getElementById('qtyVal').value, 
             price: parseInt(document.getElementById('pTotal').innerText.replace(/\s/g, '')) 
         }, '*');
     }
 
-    // Слушатель для выбора из каталога
-    window.addEventListener('message', e => {
-        if(e.data.type === 'SEL') {
-            const p = products.find(prod => prod.name.includes(e.data.name));
-            if(p) selectProduct(p);
-        }
-    });
+    fetchData();
 </script>
 </body>
 </html>

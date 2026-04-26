@@ -3,62 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        :root { --sti-blue: #004a99; --sti-dark: #002d5e; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; background: #fff; }
-        .sti-widget { border: 2px solid var(--sti-blue); border-radius: 12px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h2 { color: var(--sti-blue); font-size: 15px; margin: 0 0 12px; text-align: center; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        :root { --blue: #004a99; --dark: #1a202c; --border: #e2e8f0; }
+        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: #fff; color: var(--dark); }
+        
+        .widget-box { border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
+        .header { font-size: 14px; font-weight: 700; color: var(--blue); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
         .field { margin-bottom: 12px; }
-        label { display: block; font-size: 10px; font-weight: bold; color: #666; margin-bottom: 4px; }
-        select, input { width: 100%; padding: 10px; border: 2px solid #edf2f7; border-radius: 6px; box-sizing: border-box; font-size: 13px; font-weight: 600; }
-        .results { background: var(--sti-dark); color: white; padding: 12px; border-radius: 8px; margin-top: 12px; }
-        .res-line { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .res-total { font-size: 20px; font-weight: 800; color: #4ade80; text-align: right; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px; }
-        .btn-add { background: #22c55e; color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 800; cursor: pointer; margin-top: 12px; text-transform: uppercase; }
+        label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+        
+        select, input { 
+            width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--border); 
+            border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.2s;
+        }
+        select:focus, input:focus { border-color: var(--blue); }
+
+        .info-panel { background: #f8fafc; border-radius: 4px; padding: 12px; margin-top: 16px; border-left: 3px solid var(--blue); }
+        .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+        .total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+        .total-price { font-size: 18px; font-weight: 700; color: var(--blue); }
+
+        .btn-submit { 
+            background: var(--blue); color: white; border: none; width: 100%; height: 40px; 
+            border-radius: 4px; font-weight: 600; cursor: pointer; margin-top: 12px; font-size: 13px;
+        }
+        .btn-submit:hover { background: #003366; }
     </style>
 </head>
 <body>
-<div class="sti-widget">
-    <h2>Инженерный расчет</h2>
+<div class="widget-box">
+    <div class="header">Параметры изделия</div>
+    
     <div class="field">
-        <label>Продукция</label>
-        <select id="pSel" onchange="calc()">
-            <option value="" data-p="0" data-w="0" data-u="ед.">-- Выберите --</option>
-            <option value="1" data-p="285" data-w="2.51" data-u="карта">Сетка сварная 1</option>
-            <option value="2" data-p="450" data-w="4.35" data-u="карта">Сетка сварная 2</option>
-            <option value="3" data-p="85" data-w="0.052" data-u="метр">Проволока 3.0</option>
-            <option value="4" data-p="120" data-w="0.138" data-u="шт">Болт М16х60</option>
-            <option value="5" data-p="180" data-w="0.512" data-u="шт">Болт М24х100</option>
-            <option value="6" data-p="55" data-w="0.034" data-u="шт">Гайка М16</option>
+        <label>Тип продукции</label>
+        <select id="prod" onchange="calc()">
+            <option value="" data-p="0" data-w="0" data-u="ед.">-- Выберите из списка --</option>
+            <option value="1" data-p="285" data-w="2.51" data-u="карта">Сетка сварная (2.51 кг/к)</option>
+            <option value="2" data-p="450" data-w="4.35" data-u="карта">Сетка сварная (4.35 кг/к)</option>
+            <option value="3" data-p="1200" data-w="11.75" data-u="карта">Сетка сварная (11.75 кг/к)</option>
+            <option value="4" data-p="115" data-w="0.138" data-u="шт">Болт М16х60 ГОСТ</option>
+            <option value="5" data-p="180" data-w="0.512" data-u="шт">Болт М24х100 ГОСТ</option>
+            <option value="6" data-p="55" data-w="0.034" data-u="шт">Гайка М16 ГОСТ</option>
+            <option value="7" data-p="110" data-w="0.110" data-u="шт">Гайка М24 ГОСТ</option>
+            <option value="8" data-p="520" data-w="0.528" data-u="метр">Канат 12.0-Г-В-Л-О</option>
         </select>
     </div>
+
     <div class="field">
-        <label id="qLab">Количество</label>
+        <label id="qLabel">Количество</label>
         <input type="number" id="qty" value="1" min="1" oninput="calc()">
     </div>
-    <div class="results">
-        <div class="res-line"><span>Вес ед.:</span> <span id="wU">0</span> кг</div>
-        <div class="res-line"><span>Общий вес:</span> <span id="wT">0</span> кг</div>
-        <div class="res-total"><span id="pT">0</span> ₽</div>
+
+    <div class="info-panel">
+        <div class="info-row"><span>Вес ед.:</span> <b id="wU">0.00</b> кг</div>
+        <div class="info-row"><span>Общий вес:</span> <b id="wT">0.00</b> кг</div>
+        <div class="total-row">
+            <span>ИТОГО:</span>
+            <span class="total-price"><span id="pT">0</span> ₽</span>
+        </div>
     </div>
-    <button class="btn-add" onclick="send()">Добавить в расчет</button>
+
+    <button class="btn-submit" onclick="send()">ДОБАВИТЬ В РАСЧЕТ</button>
 </div>
+
 <script>
     function calc() {
-        const o = document.getElementById('pSel').selectedOptions[0];
+        const o = document.getElementById('prod').selectedOptions[0];
         const q = parseFloat(document.getElementById('qty').value) || 0;
-        document.getElementById('qLab').innerText = "Количество (" + o.dataset.u + ")";
-        document.getElementById('wU').innerText = o.dataset.w;
-        document.getElementById('wT').innerText = (o.dataset.w * q).toFixed(2);
+        document.getElementById('qLabel').innerText = "Количество (" + o.dataset.u + ")";
+        document.getElementById('wU').innerText = parseFloat(o.dataset.w).toFixed(3);
+        document.getElementById('wT').innerText = (o.dataset.w * q).toFixed(3);
         document.getElementById('pT').innerText = (o.dataset.p * q).toLocaleString();
     }
     function send() {
-        const o = document.getElementById('pSel').selectedOptions[0];
+        const o = document.getElementById('prod').selectedOptions[0];
         if(!o.value) return;
-        window.parent.postMessage({ type: 'ADD', name: o.text, qty: document.getElementById('qty').value, price: parseInt(document.getElementById('pT').innerText.replace(/\s/g, '')) }, '*');
+        window.parent.postMessage({ 
+            type: 'ADD', 
+            name: o.text, 
+            qty: document.getElementById('qty').value, 
+            unit: o.dataset.u,
+            price: parseInt(document.getElementById('pT').innerText.replace(/\s/g, '')) 
+        }, '*');
     }
     window.addEventListener('message', e => {
         if(e.data.type === 'SEL') {
-            const s = document.getElementById('pSel');
+            const s = document.getElementById('prod');
             for(let i=0; i<s.options.length; i++) {
                 if(s.options[i].text.includes(e.data.name)) { s.selectedIndex = i; calc(); break; }
             }

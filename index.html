@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>СТРОЙТЕХИНВЕСТ | Система</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; }
+        header { background: #004a99; color: white; padding: 20px 5%; font-size: 24px; font-weight: 800; }
+        .main { display: grid; grid-template-columns: 1fr 350px; gap: 30px; padding: 30px 5%; }
+        .card { background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        .btn-pick { background: #004a99; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600; width: 100%; }
+        iframe { width: 100%; height: 450px; border: none; }
+        .summary { background: white; padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid #e2e8f0; }
+        .total { font-size: 22px; color: #004a99; font-weight: 900; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <header>СТРОЙТЕХИНВЕСТ</header>
+    <div class="main">
+        <div>
+            <h2>Каталог</h2>
+            <div class="card">
+                <h4>Сетка сварная 1</h4>
+                <p>Вес: 2.51 кг. ГОСТ 23279.</p>
+                <button class="btn-pick" onclick="sel('Сетка сварная 1')">ВЫБРАТЬ</button>
+            </div>
+            <div class="card">
+                <h4>Болт М16х60</h4>
+                <p>Вес: 0.138 кг. Высокопрочный.</p>
+                <button class="btn-pick" onclick="sel('Болт М16х60')">ВЫБРАТЬ</button>
+            </div>
+        </div>
+        <aside>
+            <iframe id="calc" src="widget.html"></iframe>
+            <div class="summary">
+                <b>ИТОГ РАСЧЕТА:</b>
+                <div id="list" style="font-size: 12px; color: #666; margin: 10px 0;"></div>
+                <div class="total"><span id="total">0</span> ₽</div>
+            </div>
+        </aside>
+    </div>
+    <script>
+        let sum = 0;
+        function sel(n) { document.getElementById('calc').contentWindow.postMessage({type:'SEL', name:n}, '*'); }
+        window.addEventListener('message', e => {
+            if(e.data.type === 'ADD') {
+                document.getElementById('list').innerHTML += `<div>${e.data.name} x${e.data.qty} — ${e.data.price} ₽</div>`;
+                sum += e.data.price;
+                document.getElementById('total').innerText = sum.toLocaleString();
+            }
+        });
+    </script>
+</body>
+</html>

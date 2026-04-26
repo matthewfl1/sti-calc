@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root { --sti-blue: #004a99; --sti-dark: #002d5e; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; background: #fff; }
+        .sti-widget { border: 2px solid var(--sti-blue); border-radius: 12px; padding: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h2 { color: var(--sti-blue); font-size: 15px; margin: 0 0 12px; text-align: center; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .field { margin-bottom: 12px; }
+        label { display: block; font-size: 10px; font-weight: bold; color: #666; margin-bottom: 4px; }
+        select, input { width: 100%; padding: 10px; border: 2px solid #edf2f7; border-radius: 6px; box-sizing: border-box; font-size: 13px; font-weight: 600; }
+        .results { background: var(--sti-dark); color: white; padding: 12px; border-radius: 8px; margin-top: 12px; }
+        .res-line { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .res-total { font-size: 20px; font-weight: 800; color: #4ade80; text-align: right; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px; }
+        .btn-add { background: #22c55e; color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 800; cursor: pointer; margin-top: 12px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<div class="sti-widget">
+    <h2>Инженерный расчет</h2>
+    <div class="field">
+        <label>Продукция</label>
+        <select id="pSel" onchange="calc()">
+            <option value="" data-p="0" data-w="0" data-u="ед.">-- Выберите --</option>
+            <option value="1" data-p="285" data-w="2.51" data-u="карта">Сетка сварная 1</option>
+            <option value="2" data-p="450" data-w="4.35" data-u="карта">Сетка сварная 2</option>
+            <option value="3" data-p="85" data-w="0.052" data-u="метр">Проволока 3.0</option>
+            <option value="4" data-p="120" data-w="0.138" data-u="шт">Болт М16х60</option>
+            <option value="5" data-p="180" data-w="0.512" data-u="шт">Болт М24х100</option>
+            <option value="6" data-p="55" data-w="0.034" data-u="шт">Гайка М16</option>
+        </select>
+    </div>
+    <div class="field">
+        <label id="qLab">Количество</label>
+        <input type="number" id="qty" value="1" min="1" oninput="calc()">
+    </div>
+    <div class="results">
+        <div class="res-line"><span>Вес ед.:</span> <span id="wU">0</span> кг</div>
+        <div class="res-line"><span>Общий вес:</span> <span id="wT">0</span> кг</div>
+        <div class="res-total"><span id="pT">0</span> ₽</div>
+    </div>
+    <button class="btn-add" onclick="send()">Добавить в расчет</button>
+</div>
+<script>
+    function calc() {
+        const o = document.getElementById('pSel').selectedOptions[0];
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        document.getElementById('qLab').innerText = "Количество (" + o.dataset.u + ")";
+        document.getElementById('wU').innerText = o.dataset.w;
+        document.getElementById('wT').innerText = (o.dataset.w * q).toFixed(2);
+        document.getElementById('pT').innerText = (o.dataset.p * q).toLocaleString();
+    }
+    function send() {
+        const o = document.getElementById('pSel').selectedOptions[0];
+        if(!o.value) return;
+        window.parent.postMessage({ type: 'ADD', name: o.text, qty: document.getElementById('qty').value, price: parseInt(document.getElementById('pT').innerText.replace(/\s/g, '')) }, '*');
+    }
+    window.addEventListener('message', e => {
+        if(e.data.type === 'SEL') {
+            const s = document.getElementById('pSel');
+            for(let i=0; i<s.options.length; i++) {
+                if(s.options[i].text.includes(e.data.name)) { s.selectedIndex = i; calc(); break; }
+            }
+        }
+    });
+</script>
+</body>
+</html>

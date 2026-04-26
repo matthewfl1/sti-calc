@@ -3,95 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        :root { --blue: #004a99; --dark: #1a202c; --border: #e2e8f0; }
-        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: #fff; color: var(--dark); }
+        :root { --blue: #004a99; --border: #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 10px; background: #fff; overflow: hidden; }
+        .widget-box { border: 1px solid var(--border); border-radius: 4px; padding: 15px; position: relative; }
+        .header { font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 12px; text-transform: uppercase; }
         
-        .widget-box { border: 1px solid var(--border); border-radius: 4px; padding: 16px; }
-        .header { font-size: 14px; font-weight: 700; color: var(--blue); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .search-container { position: relative; margin-bottom: 15px; }
+        label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
         
-        .field { margin-bottom: 12px; }
-        label { display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
-        
-        select, input { 
+        .search-input { 
             width: 100%; height: 38px; padding: 0 10px; border: 1px solid var(--border); 
-            border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.2s;
+            border-radius: 4px; font-size: 13px; box-sizing: border-box;
         }
-        select:focus, input:focus { border-color: var(--blue); }
+        
+        /* Выпадающий список подсказок */
+        .suggestions {
+            position: absolute; width: 100%; background: #fff; border: 1px solid var(--border);
+            border-top: none; z-index: 100; max-height: 180px; overflow-y: auto; display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .suggestion-item { padding: 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .suggestion-item:hover { background: #f8fafc; color: var(--blue); }
 
-        .info-panel { background: #f8fafc; border-radius: 4px; padding: 12px; margin-top: 16px; border-left: 3px solid var(--blue); }
-        .info-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-        .total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
-        .total-price { font-size: 18px; font-weight: 700; color: var(--blue); }
+        .info-panel { background: #f8fafc; border-radius: 4px; padding: 12px; border-left: 3px solid var(--blue); }
+        .info-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .total-price { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 8px; }
 
-        .btn-submit { 
+        .btn-add { 
             background: var(--blue); color: white; border: none; width: 100%; height: 40px; 
-            border-radius: 4px; font-weight: 600; cursor: pointer; margin-top: 12px; font-size: 13px;
+            border-radius: 4px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 12px;
         }
-        .btn-submit:hover { background: #003366; }
     </style>
 </head>
 <body>
 <div class="widget-box">
-    <div class="header">Параметры изделия</div>
+    <div class="header">Конфигуратор метизов</div>
     
-    <div class="field">
-        <label>Тип продукции</label>
-        <select id="prod" onchange="calc()">
-            <option value="" data-p="0" data-w="0" data-u="ед.">-- Выберите из списка --</option>
-            <option value="1" data-p="285" data-w="2.51" data-u="карта">Сетка сварная (2.51 кг/к)</option>
-            <option value="2" data-p="450" data-w="4.35" data-u="карта">Сетка сварная (4.35 кг/к)</option>
-            <option value="3" data-p="1200" data-w="11.75" data-u="карта">Сетка сварная (11.75 кг/к)</option>
-            <option value="4" data-p="115" data-w="0.138" data-u="шт">Болт М16х60 ГОСТ</option>
-            <option value="5" data-p="180" data-w="0.512" data-u="шт">Болт М24х100 ГОСТ</option>
-            <option value="6" data-p="55" data-w="0.034" data-u="шт">Гайка М16 ГОСТ</option>
-            <option value="7" data-p="110" data-w="0.110" data-u="шт">Гайка М24 ГОСТ</option>
-            <option value="8" data-p="520" data-w="0.528" data-u="метр">Канат 12.0-Г-В-Л-О</option>
-        </select>
+    <div class="search-container">
+        <label>Поиск по названию или ГОСТ</label>
+        <input type="text" id="searchInput" class="search-input" placeholder="Напр: 23279 или Сетка..." oninput="showSuggestions(this.value)">
+        <div id="suggestions" class="suggestions"></div>
     </div>
 
-    <div class="field">
-        <label id="qLabel">Количество</label>
-        <input type="number" id="qty" value="1" min="1" oninput="calc()">
-    </div>
-
-    <div class="info-panel">
-        <div class="info-row"><span>Вес ед.:</span> <b id="wU">0.00</b> кг</div>
-        <div class="info-row"><span>Общий вес:</span> <b id="wT">0.00</b> кг</div>
-        <div class="total-row">
-            <span>ИТОГО:</span>
-            <span class="total-price"><span id="pT">0</span> ₽</span>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <div style="flex: 1;">
+            <label id="unitLabel">Кол-во</label>
+            <input type="number" id="qty" class="search-input" value="1" min="1" oninput="calculate()">
         </div>
     </div>
 
-    <button class="btn-submit" onclick="send()">ДОБАВИТЬ В РАСЧЕТ</button>
+    <div class="info-panel">
+        <div class="info-row"><span>Вес ед.:</span> <b id="wUnit">0.000</b> кг</div>
+        <div class="info-row"><span>Общий вес:</span> <b id="wTotal">0.000</b> кг</div>
+        <div class="total-price"><span id="pTotal">0</span> ₽</div>
+    </div>
+
+    <button class="btn-add" onclick="sendToSite()">ДОБАВИТЬ В РАСЧЕТ</button>
 </div>
 
 <script>
-    function calc() {
-        const o = document.getElementById('prod').selectedOptions[0];
-        const q = parseFloat(document.getElementById('qty').value) || 0;
-        document.getElementById('qLabel').innerText = "Количество (" + o.dataset.u + ")";
-        document.getElementById('wU').innerText = parseFloat(o.dataset.w).toFixed(3);
-        document.getElementById('wT').innerText = (o.dataset.w * q).toFixed(3);
-        document.getElementById('pT').innerText = (o.dataset.p * q).toLocaleString();
+    // РЕАЛЬНАЯ БАЗА ДАННЫХ (из твоего скриншота)
+    const products = [
+        { name: "Сетка сварная ГОСТ 23279", weight: 2.510, price: 285, unit: "карта" },
+        { name: "Сетка сварная тяжелая ГОСТ 23279", weight: 4.350, price: 450, unit: "карта" },
+        { name: "Проволока 3.0 ВР-1 ГОСТ 6727", weight: 0.052, price: 85, unit: "метр" },
+        { name: "Проволока 4.0 ВР-1 ГОСТ 6727", weight: 0.092, price: 110, unit: "метр" },
+        { name: "Болт М16х60 ГОСТ 22353", weight: 0.138, price: 115, unit: "шт" },
+        { name: "Болт М24х100 ГОСТ 22353", weight: 0.512, price: 180, unit: "шт" },
+        { name: "Гайка М16 ГОСТ 5915", weight: 0.034, price: 55, unit: "шт" },
+        { name: "Гайка М24 ГОСТ 5915", weight: 0.110, price: 110, unit: "шт" },
+        { name: "Канат 12.0-Г-В-Л-О ГОСТ 2688", weight: 0.528, price: 520, unit: "метр" }
+    ];
+
+    let selectedProduct = null;
+
+    function showSuggestions(val) {
+        const container = document.getElementById('suggestions');
+        container.innerHTML = '';
+        if (val.length < 1) { container.style.display = 'none'; return; }
+
+        const filtered = products.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
+        
+        if (filtered.length > 0) {
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerText = p.name;
+                div.onclick = () => selectProduct(p);
+                container.appendChild(div);
+            });
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+        }
     }
-    function send() {
-        const o = document.getElementById('prod').selectedOptions[0];
-        if(!o.value) return;
+
+    function selectProduct(p) {
+        selectedProduct = p;
+        document.getElementById('searchInput').value = p.name;
+        document.getElementById('suggestions').style.display = 'none';
+        calculate();
+    }
+
+    function calculate() {
+        if (!selectedProduct) return;
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        document.getElementById('unitLabel').innerText = "Кол-во (" + selectedProduct.unit + ")";
+        document.getElementById('wUnit').innerText = selectedProduct.weight.toFixed(3);
+        document.getElementById('wTotal').innerText = (selectedProduct.weight * q).toFixed(3);
+        document.getElementById('pTotal').innerText = (selectedProduct.price * q).toLocaleString();
+    }
+
+    function sendToSite() {
+        if (!selectedProduct) return;
         window.parent.postMessage({ 
             type: 'ADD', 
-            name: o.text, 
+            name: selectedProduct.name, 
             qty: document.getElementById('qty').value, 
-            unit: o.dataset.u,
-            price: parseInt(document.getElementById('pT').innerText.replace(/\s/g, '')) 
+            price: parseInt(document.getElementById('pTotal').innerText.replace(/\s/g, '')) 
         }, '*');
     }
+
+    // Слушатель для выбора из каталога
     window.addEventListener('message', e => {
         if(e.data.type === 'SEL') {
-            const s = document.getElementById('prod');
-            for(let i=0; i<s.options.length; i++) {
-                if(s.options[i].text.includes(e.data.name)) { s.selectedIndex = i; calc(); break; }
-            }
+            const p = products.find(prod => prod.name.includes(e.data.name));
+            if(p) selectProduct(p);
         }
     });
 </script>

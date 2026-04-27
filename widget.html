@@ -3,110 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        :root { --blue: #004a99; --border: #cbd5e1; }
-        body { font-family: sans-serif; margin: 0; padding: 0; background: #fff; }
-        .box { border: 1px solid var(--border); padding: 15px; }
-        
-        .label { display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
-        .field { margin-bottom: 12px; position: relative; }
-        
+        :root { --blue: #004a99; --border: #cbd5e1; --bg: #f8fafc; }
+        body { font-family: sans-serif; margin: 0; padding: 12px; background: #fff; border: 1px solid var(--border); }
+        .label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
+        .input-group { margin-bottom: 12px; }
         input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 2px; font-size: 13px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--blue); }
-
-        .drop { position: absolute; width: 100%; background: #fff; border: 1px solid var(--border); z-index: 10; max-height: 150px; overflow-y: auto; display: none; }
-        .drop-item { padding: 8px 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
-        .drop-item:hover { background: #f8fafc; color: var(--blue); }
-
-        .res-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; margin-top: 12px; }
-        .res-row { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px; }
-        .total-val { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
-
-        .btn { background: var(--blue); color: #fff; border: none; width: 100%; height: 38px; font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 12px; }
-        .btn:disabled { background: #94a3b8; }
+        .res-box { background: var(--bg); padding: 12px; border: 1px solid #e2e8f0; margin-top: 10px; }
+        .res-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .total-price { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+        .btn-add { background: var(--blue); color: #fff; border: none; width: 100%; height: 40px; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 10px; font-size: 11px; }
+        .btn-add:disabled { background: #cbd5e1; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div class="field">
-        <label>Поиск / ГОСТ</label>
-        <input type="text" id="sIn" placeholder="Введите наименование..." oninput="search(this.value)">
-        <div id="drop" class="drop"></div>
-    </div>
-    <div class="field">
-        <label id="qLab">Количество</label>
-        <input type="number" id="qty" value="1" min="1" oninput="calc()">
-    </div>
-    <div class="res-box">
-        <div class="res-row"><span>Вес ед:</span> <span id="wU">0.000</span> кг</div>
-        <div class="res-row"><span>Общий вес:</span> <span id="wT">0.000</span> кг</div>
-        <div class="total-val"><span id="pT">0</span> ₽</div>
-    </div>
-    <button id="add" class="btn" onclick="add()" disabled>Добавить в расчет</button>
+<div class="input-group">
+    <label>Выбранная позиция</label>
+    <input type="text" id="itemName" readonly placeholder="Выберите товар в каталоге...">
 </div>
+
+<div class="input-group">
+    <label id="unitLabel">Количество</label>
+    <input type="number" id="qty" value="1" min="1" oninput="calculate()">
+</div>
+
+<div class="res-box">
+    <div class="res-row"><span>Вес ед.:</span> <b id="wU">0.000</b> кг</div>
+    <div class="res-row"><span>Общий вес:</span> <b id="wT">0.000</b> кг</div>
+    <div class="total-price"><span id="pT">0</span> ₽</div>
+</div>
+
+<button id="addBtn" class="btn-add" onclick="sendData()" disabled>Добавить в расчет</button>
 
 <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
     let db = [];
-    let cur = null;
+    let current = null;
 
-    async function load() {
-        try {
-            const r = await fetch(CSV_URL);
-            const t = await r.text();
-            db = t.split('\n').slice(1).map(l => {
-                const p = l.split(',');
-                return { name: p[1]?.trim(), weight: parseFloat(p[2]), unit: p[3]?.trim(), price: parseFloat(p[4]) };
-            }).filter(i => i.name && !isNaN(i.price));
-        } catch (e) { console.error("DB Load Error"); }
+    // Загрузка данных
+    async function init() {
+        const r = await fetch(CSV_URL);
+        const t = await r.text();
+        db = t.split('\n').slice(1).map(line => {
+            const p = line.split(',');
+            return {
+                name: p[1]?.trim(),
+                weight: parseFloat(p[2]),
+                unit: p[3]?.trim(),
+                price: parseFloat(p[4])
+            };
+        }).filter(i => i.name);
     }
 
-    function search(v) {
-        const d = document.getElementById('drop');
-        d.innerHTML = '';
-        if (v.length < 1) { d.style.display = 'none'; return; }
-        const matches = db.filter(i => i.name.toLowerCase().includes(v.toLowerCase()));
-        if (matches.length > 0) {
-            matches.forEach(i => {
-                const div = document.createElement('div');
-                div.className = 'drop-item';
-                div.innerText = i.name;
-                div.onclick = () => select(i);
-                d.appendChild(div);
-            });
-            d.style.display = 'block';
-        } else { d.style.display = 'none'; }
-    }
-
-    function select(i) {
-        cur = i;
-        document.getElementById('sIn').value = i.name;
-        document.getElementById('drop').style.display = 'none';
-        document.getElementById('add').disabled = false;
-        calc();
-    }
-
-    function calc() {
-        if (!cur) return;
-        const q = parseFloat(document.getElementById('qty').value) || 0;
-        document.getElementById('qLab').innerText = "Количество (" + cur.unit + ")";
-        document.getElementById('wU').innerText = cur.weight.toFixed(3);
-        document.getElementById('wT').innerText = (cur.weight * q).toFixed(3);
-        document.getElementById('pT').innerText = (cur.price * q).toLocaleString();
-    }
-
-    function add() {
-        window.parent.postMessage({ type: 'ADD', name: cur.name, qty: document.getElementById('qty').value, price: parseInt(document.getElementById('pT').innerText.replace(/\s/g, '')) }, '*');
-    }
-
-    window.addEventListener('message', e => {
-        if(e.data.type === 'SEL') {
-            const found = db.find(i => i.name.toLowerCase().includes(e.data.name.toLowerCase()));
-            if(found) select(found);
+    // Слушаем команды от основного сайта
+    window.addEventListener('message', function(e) {
+        if (e.data.type === 'SET_BY_INDEX') {
+            const item = db[e.data.index];
+            if (item) {
+                current = item;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('unitLabel').innerText = "Количество (" + item.unit + ")";
+                document.getElementById('addBtn').disabled = false;
+                calculate();
+            }
         }
     });
 
-    load();
+    function calculate() {
+        if (!current) return;
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        document.getElementById('wU').innerText = current.weight.toFixed(3);
+        document.getElementById('wT').innerText = (current.weight * q).toFixed(3);
+        document.getElementById('pT').innerText = (current.price * q).toLocaleString();
+    }
+
+    function sendData() {
+        const q = document.getElementById('qty').value;
+        const p = parseInt(document.getElementById('pT').innerText.replace(/\s/g, ''));
+        window.parent.postMessage({
+            type: 'ADD_TO_CART',
+            name: current.name,
+            qty: q,
+            price: p
+        }, '*');
+    }
+
+    init();
 </script>
 </body>
 </html>

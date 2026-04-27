@@ -3,27 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 15px; color: #1e293b; }
-        .label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 2px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; }
-        .res { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; }
-        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .total { font-size: 22px; font-weight: 800; color: #004a99; text-align: right; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
-        .btn { background: #004a99; color: #fff; border: none; width: 100%; height: 40px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-top: 12px; }
-        .btn:disabled { background: #cbd5e1; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; color: #1e293b; box-sizing: border-box; }
+        .label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input { width: 100%; height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 2px; font-size: 13px; box-sizing: border-box; margin-bottom: 15px; outline: none; }
+        input[readonly] { background: #f1f5f9; color: #475569; }
+        .res-pane { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; }
+        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
+        .total { font-size: 24px; font-weight: 800; color: #004a99; text-align: right; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+        .btn { background: #004a99; color: #fff; border: none; width: 100%; height: 44px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; margin-top: 15px; }
+        .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <label>Товар</label>
+    <label>Выбранный товар</label>
     <input type="text" id="name" readonly placeholder="Выберите в каталоге...">
+    
     <label id="uL">Количество</label>
     <input type="number" id="qty" value="1" min="1" oninput="calc()">
-    <div class="res">
-        <div class="row"><span>Вес ед:</span> <b id="wU">0.000</b> кг</div>
-        <div class="row"><span>Всего:</span> <b id="wT">0.000</b> кг</div>
+
+    <div class="res-pane">
+        <div class="row"><span>Вес ед.:</span> <b id="wU">0.000</b> кг</div>
+        <div class="row"><span>Общий вес:</span> <b id="wT">0.000</b> кг</div>
         <div class="total"><span id="pT">0</span> ₽</div>
     </div>
-    <button id="add" class="btn" onclick="send()" disabled>Добавить в спецификацию</button>
+    
+    <button id="addBtn" class="btn" onclick="send()" disabled>Рассчитать</button>
 
 <script>
     const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
@@ -43,7 +47,7 @@
             cur = db[e.data.idx];
             document.getElementById('name').value = cur.name;
             document.getElementById('uL').innerText = "Количество (" + cur.unit + ")";
-            document.getElementById('add').disabled = false;
+            document.getElementById('addBtn').disabled = false;
             calc();
         }
     });
@@ -53,11 +57,26 @@
         const q = parseFloat(document.getElementById('qty').value) || 0;
         document.getElementById('wU').innerText = cur.weight.toFixed(3);
         document.getElementById('wT').innerText = (cur.weight * q).toFixed(3);
-        document.getElementById('pT').innerText = (cur.price * q).toLocaleString();
+        document.getElementById('pT').innerText = Math.round(cur.price * q).toLocaleString();
     }
 
     function send() {
-        window.parent.postMessage({ type: 'ADDED', name: cur.name, price: (cur.price * document.getElementById('qty').value) }, '*');
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        window.parent.postMessage({ 
+            type: 'ADDED', 
+            name: cur.name, 
+            price: (cur.price * q),
+            weight: (cur.weight * q)
+        }, '*');
+        
+        // Очистка полей после нажатия
+        cur = null;
+        document.getElementById('name').value = "";
+        document.getElementById('qty').value = "1";
+        document.getElementById('wU').innerText = "0.000";
+        document.getElementById('wT').innerText = "0.000";
+        document.getElementById('pT').innerText = "0";
+        document.getElementById('addBtn').disabled = true;
     }
 
     load();

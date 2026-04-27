@@ -2,59 +2,93 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ООО СТРОЙТЕХИНВЕСТ | Панель управления</title>
+    <title>ООО СТРОЙТЕХИНВЕСТ | Система управления заказами</title>
     <style>
-        :root { --blue: #004a99; --text: #1e293b; --bg: #f8fafc; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text); }
-        header { background: #fff; border-bottom: 2px solid var(--blue); padding: 15px 5%; display: flex; justify-content: space-between; }
-        .container { display: grid; grid-template-columns: 1fr 380px; gap: 30px; padding: 30px 5%; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-        .card { background: #fff; padding: 20px; border: 1px solid #e2e8f0; border-radius: 4px; }
-        .btn-sel { width: 100%; padding: 10px; border: 1px solid var(--blue); background: none; color: var(--blue); cursor: pointer; font-weight: 600; margin-top: 15px; }
-        .btn-sel:hover { background: var(--blue); color: #fff; }
-        iframe { width: 100%; height: 420px; border: none; }
+        :root { --blue: #004a99; --text: #1e293b; --bg: #f1f5f9; --border: #cbd5e1; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); margin: 0; color: var(--text); }
+        
+        header { background: #fff; border-bottom: 1px solid var(--border); padding: 12px 5%; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 18px; font-weight: 800; color: var(--blue); letter-spacing: 0.5px; }
+
+        .container { display: grid; grid-template-columns: 1fr 380px; gap: 24px; padding: 24px 5%; max-width: 1400px; margin: auto; }
+        
+        section h2 { font-size: 16px; margin: 0 0 16px; text-transform: uppercase; color: #475569; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        
+        .card { background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: 2px; transition: 0.2s; }
+        .card:hover { border-color: var(--blue); }
+        .card h4 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+        .card p { font-size: 12px; color: #64748b; line-height: 1.5; margin: 0 0 12px; }
+        
+        .btn-pick { width: 100%; padding: 8px; background: #fff; border: 1px solid var(--blue); color: var(--blue); font-size: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        .btn-pick:hover { background: var(--blue); color: #fff; }
+
+        .sidebar { position: sticky; top: 24px; }
+        iframe { width: 100%; height: 400px; border: none; margin-bottom: 16px; background: transparent; }
+        
+        .order-block { background: #fff; border: 1px solid var(--border); padding: 20px; border-radius: 2px; }
+        .order-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+        .final-price { font-size: 24px; font-weight: 800; color: var(--blue); margin-top: 16px; text-align: right; }
     </style>
 </head>
 <body>
-    <header><b style="color:var(--blue)">СТРОЙТЕХИНВЕСТ</b> <span>Модуль конфигурации ГОСТ</span></header>
+    <header><div class="logo">СТРОЙТЕХИНВЕСТ</div></header>
+
     <div class="container">
         <main>
-            <h2 style="font-size:18px;">Каталог продукции (ГОСТ)</h2>
+            <h2>Номенклатура продукции</h2>
             <div class="grid">
                 <div class="card">
-                    <h4>Сетка ГОСТ 23279</h4>
-                    <p>Вес: 2.510 кг/карта. Арматурная, тип 1.</p>
-                    <button class="btn-sel" onclick="pick('Сетка сварная ГОСТ 23279')">ВЫБРАТЬ</button>
+                    <h4>Сетка 50х50х3 ГОСТ 23279</h4>
+                    <p>Арматурная сварная сетка. Вес: 1.850 кг/карта. Применяется для армирования ЖБК.</p>
+                    <button class="btn-pick" onclick="pick('50х50х3')">Выбрать</button>
                 </div>
                 <div class="card">
-                    <h4>Болт ГОСТ 22353</h4>
-                    <p>М16х60. Высокопрочный крепеж 10.9.</p>
-                    <button class="btn-sel" onclick="pick('Болт М16х60 ГОСТ 22353')">ВЫБРАТЬ</button>
+                    <h4>Сетка 100х100х4 ГОСТ 23279</h4>
+                    <p>Сетка сварная в картах. Вес: 4.800 кг/карта. ГОСТ 23279-2012.</p>
+                    <button class="btn-pick" onclick="pick('100х100х4')">Выбрать</button>
                 </div>
                 <div class="card">
-                    <h4>Канат ГОСТ 2688</h4>
-                    <p>12.0-Г-В-Л-О. Стальной трос общего назначения.</p>
-                    <button class="btn-sel" onclick="pick('Канат 12.0-Г-В-Л-О ГОСТ 2688')">ВЫБРАТЬ</button>
+                    <h4>Проволока 3.0 ВР-1 ГОСТ 6727</h4>
+                    <p>Проволока стальная для армирования. Вес: 100.000 кг/моток. Высокая прочность.</p>
+                    <button class="btn-pick" onclick="pick('3.0 ВР-1')">Выбрать</button>
+                </div>
+                <div class="card">
+                    <h4>Болт М16х60 ГОСТ 22353</h4>
+                    <p>Болт высокопрочный 10.9. Вес: 0.138 кг/шт. Для стальных конструкций.</p>
+                    <button class="btn-pick" onclick="pick('М16')">Выбрать</button>
+                </div>
+                <div class="card">
+                    <h4>Гайка М24 ГОСТ 5915</h4>
+                    <p>Гайка шестигранная. Вес: 0.110 кг/шт. Класс прочности 8.0/10.0.</p>
+                    <button class="btn-pick" onclick="pick('Гайка М24')">Выбрать</button>
                 </div>
             </div>
         </main>
-        <aside>
-            <iframe id="widg" src="widget.html"></iframe>
-            <div id="res" style="background:#fff; padding:20px; border:1px solid #e2e8f0; margin-top:20px;">
-                <b style="font-size:12px; color:#64748b;">ИТОГО К ЗАКАЗУ:</b>
-                <div id="items" style="font-size:13px; margin:15px 0;"></div>
-                <div style="font-size:24px; font-weight:800; color:var(--blue);"><span id="total">0</span> ₽</div>
+
+        <aside class="sidebar">
+            <iframe id="calcFrame" src="widget.html"></iframe>
+            <div class="order-block">
+                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 12px; text-transform: uppercase;">Спецификация заказа</div>
+                <div id="list"></div>
+                <div class="final-price"><span id="totalSum">0</span> ₽</div>
             </div>
         </aside>
     </div>
+
     <script>
-        let sum = 0;
-        function pick(n) { document.getElementById('widg').contentWindow.postMessage({type:'SEL', name:n}, '*'); }
+        let globalSum = 0;
+        function pick(str) { 
+            document.getElementById('calcFrame').contentWindow.postMessage({type:'SEL', name: str}, '*'); 
+        }
         window.addEventListener('message', e => {
             if(e.data.type === 'ADD') {
-                document.getElementById('items').innerHTML += `<div style="margin-bottom:8px;">${e.data.name} (x${e.data.qty}) — <b>${e.data.price.toLocaleString()} ₽</b></div>`;
-                sum += e.data.price;
-                document.getElementById('total').innerText = sum.toLocaleString();
+                const item = document.createElement('div');
+                item.className = 'order-item';
+                item.innerHTML = `<span>${e.data.name} (x${e.data.qty})</span><b>${e.data.price.toLocaleString()} ₽</b>`;
+                document.getElementById('list').appendChild(item);
+                globalSum += e.data.price;
+                document.getElementById('totalSum').innerText = globalSum.toLocaleString();
             }
         });
     </script>

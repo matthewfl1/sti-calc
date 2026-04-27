@@ -2,23 +2,21 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ООО СТРОЙТЕХИНВЕСТ | Панель управления</title>
+    <title>ООО СТРОЙТЕХИНВЕСТ | Управление номенклатурой</title>
     <style>
-        :root { --blue: #004a99; --text: #1e293b; --bg: #f1f5f9; --border: #cbd5e1; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; color: var(--text); }
-        header { background: #fff; border-bottom: 1px solid var(--border); padding: 15px 5%; display: flex; justify-content: space-between; }
+        :root { --blue: #004a99; --text: #1e293b; --bg: #f8fafc; --border: #cbd5e1; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f1f5f9; margin: 0; color: var(--text); }
+        header { background: #fff; border-bottom: 1px solid var(--border); padding: 15px 5%; display: flex; align-items: center; }
         .logo { font-size: 20px; font-weight: 800; color: var(--blue); }
         .container { display: grid; grid-template-columns: 1fr 380px; gap: 24px; padding: 24px 5%; max-width: 1400px; margin: auto; }
-        h2 { font-size: 16px; text-transform: uppercase; color: #475569; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-        .card { background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: 2px; }
-        .card h4 { margin: 0 0 8px; font-size: 14px; }
-        .card p { font-size: 12px; color: #64748b; margin-bottom: 12px; }
-        .btn-pick { width: 100%; padding: 8px; background: #fff; border: 1px solid var(--blue); color: var(--blue); font-size: 12px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+        .card { background: #fff; padding: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; }
+        .card h4 { margin: 0 0 8px; font-size: 13px; color: var(--blue); text-transform: uppercase; }
+        .card p { font-size: 11px; color: #64748b; margin: 0 0 15px; line-height: 1.4; }
+        .btn-pick { width: 100%; padding: 10px; background: #fff; border: 1px solid var(--blue); color: var(--blue); font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
         .btn-pick:hover { background: var(--blue); color: #fff; }
-        .sidebar { position: sticky; top: 20px; }
-        iframe { width: 100%; height: 380px; border: none; background: transparent; }
-        .order-summary { background: #fff; border: 1px solid var(--border); padding: 20px; margin-top: 16px; }
+        iframe { width: 100%; height: 350px; border: none; background: #fff; border: 1px solid var(--border); }
+        .order-summary { background: #fff; border: 1px solid var(--border); padding: 20px; margin-top: 15px; }
         .order-item { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
         .final-price { font-size: 24px; font-weight: 800; color: var(--blue); margin-top: 15px; text-align: right; }
     </style>
@@ -28,36 +26,14 @@
 
     <div class="container">
         <main>
-            <h2>Каталог продукции</h2>
-            <div class="grid">
-                <div class="card">
-                    <h4>Сетка сварная 50х50х3</h4>
-                    <p>ГОСТ 23279. Вес: 1.85 кг/к.</p>
-                    <button class="btn-pick" onclick="pick(0)">Выбрать</button>
-                </div>
-                <div class="card">
-                    <h4>Сетка сварная 100х100х4</h4>
-                    <p>ГОСТ 23279. Вес: 4.80 кг/к.</p>
-                    <button class="btn-pick" onclick="pick(2)">Выбрать</button>
-                </div>
-                <div class="card">
-                    <h4>Проволока 3.0 ВР-1</h4>
-                    <p>ГОСТ 6727. Вес: 100.00 кг/м.</p>
-                    <button class="btn-pick" onclick="pick(15)">Выбрать</button>
-                </div>
-                <div class="card">
-                    <h4>Болт М16х60</h4>
-                    <p>ГОСТ 22353. Вес: 0.138 кг/шт.</p>
-                    <button class="btn-pick" onclick="pick(19)">Выбрать</button>
-                </div>
-            </div>
+            <h2 style="font-size: 14px; text-transform: uppercase; color: #64748b; margin-bottom: 20px;">Каталог из базы данных</h2>
+            <div id="catalog" class="grid">Загрузка товаров...</div>
         </main>
 
-        <aside class="sidebar">
+        <aside>
             <iframe id="calcFrame" src="widget.html"></iframe>
-            
             <div class="order-summary">
-                <div style="font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 10px;">ИТОГОВЫЙ РАСЧЕТ:</div>
+                <div style="font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 10px;">ТЕКУЩАЯ СПЕЦИФИКАЦИЯ</div>
                 <div id="orderList"></div>
                 <div class="final-price"><span id="totalSum">0</span> ₽</div>
             </div>
@@ -65,26 +41,49 @@
     </div>
 
     <script>
+        const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
         let total = 0;
-        // Функция отправки индекса в iframe
-        function pick(idx) {
-            const frame = document.getElementById('calcFrame');
-            frame.contentWindow.postMessage({ type: 'SET_BY_INDEX', index: idx }, '*');
+
+        async function loadCatalog() {
+            const res = await fetch(CSV);
+            const text = await res.text();
+            const rows = text.split('\n').slice(1);
+            const catalog = document.getElementById('catalog');
+            catalog.innerHTML = '';
+
+            rows.forEach((row, index) => {
+                const cols = row.split(',');
+                if (cols[1]) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div>
+                            <h4>${cols[1]}</h4>
+                            <p>Категория: ${cols[0]}<br>Вес: ${cols[2]} кг/${cols[3]}</p>
+                        </div>
+                        <button class="btn-pick" onclick="pick(${index})">Выбрать</button>
+                    `;
+                    catalog.appendChild(card);
+                }
+            });
         }
 
-        // Слушаем ответ от калькулятора при нажатии "Добавить"
-        window.addEventListener('message', function(e) {
-            if (e.data.type === 'ADD_TO_CART') {
-                const list = document.getElementById('orderList');
+        function pick(idx) {
+            document.getElementById('calcFrame').contentWindow.postMessage({ type: 'SET_IDX', idx: idx }, '*');
+        }
+
+        window.addEventListener('message', e => {
+            if (e.data.type === 'ADDED') {
                 const item = document.createElement('div');
                 item.className = 'order-item';
-                item.innerHTML = `<span>${e.data.name} (x${e.data.qty})</span><b>${e.data.price.toLocaleString()} ₽</b>`;
-                list.appendChild(item);
-                
+                item.innerHTML = `<span>${e.data.name}</span><b>${e.data.price.toLocaleString()} ₽</b>`;
+                document.getElementById('orderList').appendChild(item);
                 total += e.data.price;
                 document.getElementById('totalSum').innerText = total.toLocaleString();
             }
         });
+
+        loadCatalog();
     </script>
 </body>
 </html>

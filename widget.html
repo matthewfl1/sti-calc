@@ -3,93 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        :root { --blue: #004a99; --border: #cbd5e1; --bg: #f8fafc; }
-        body { font-family: sans-serif; margin: 0; padding: 12px; background: #fff; border: 1px solid var(--border); }
+        body { font-family: sans-serif; margin: 0; padding: 15px; color: #1e293b; }
         .label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 4px; text-transform: uppercase; }
-        .input-group { margin-bottom: 12px; }
-        input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 2px; font-size: 13px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--blue); }
-        .res-box { background: var(--bg); padding: 12px; border: 1px solid #e2e8f0; margin-top: 10px; }
-        .res-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
-        .total-price { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
-        .btn-add { background: var(--blue); color: #fff; border: none; width: 100%; height: 40px; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 10px; font-size: 11px; }
-        .btn-add:disabled { background: #cbd5e1; }
+        input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 2px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; }
+        .res { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; }
+        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .total { font-size: 22px; font-weight: 800; color: #004a99; text-align: right; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+        .btn { background: #004a99; color: #fff; border: none; width: 100%; height: 40px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-top: 12px; }
+        .btn:disabled { background: #cbd5e1; }
     </style>
 </head>
 <body>
-
-<div class="input-group">
-    <label>Выбранная позиция</label>
-    <input type="text" id="itemName" readonly placeholder="Выберите товар в каталоге...">
-</div>
-
-<div class="input-group">
-    <label id="unitLabel">Количество</label>
-    <input type="number" id="qty" value="1" min="1" oninput="calculate()">
-</div>
-
-<div class="res-box">
-    <div class="res-row"><span>Вес ед.:</span> <b id="wU">0.000</b> кг</div>
-    <div class="res-row"><span>Общий вес:</span> <b id="wT">0.000</b> кг</div>
-    <div class="total-price"><span id="pT">0</span> ₽</div>
-</div>
-
-<button id="addBtn" class="btn-add" onclick="sendData()" disabled>Добавить в расчет</button>
+    <label>Товар</label>
+    <input type="text" id="name" readonly placeholder="Выберите в каталоге...">
+    <label id="uL">Количество</label>
+    <input type="number" id="qty" value="1" min="1" oninput="calc()">
+    <div class="res">
+        <div class="row"><span>Вес ед:</span> <b id="wU">0.000</b> кг</div>
+        <div class="row"><span>Всего:</span> <b id="wT">0.000</b> кг</div>
+        <div class="total"><span id="pT">0</span> ₽</div>
+    </div>
+    <button id="add" class="btn" onclick="send()" disabled>Добавить в спецификацию</button>
 
 <script>
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
-    let db = [];
-    let current = null;
+    const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
+    let db = [], cur = null;
 
-    // Загрузка данных
-    async function init() {
-        const r = await fetch(CSV_URL);
+    async function load() {
+        const r = await fetch(CSV);
         const t = await r.text();
-        db = t.split('\n').slice(1).map(line => {
-            const p = line.split(',');
-            return {
-                name: p[1]?.trim(),
-                weight: parseFloat(p[2]),
-                unit: p[3]?.trim(),
-                price: parseFloat(p[4])
-            };
-        }).filter(i => i.name);
+        db = t.split('\n').slice(1).map(l => {
+            const p = l.split(',');
+            return { name: p[1], weight: parseFloat(p[2]), unit: p[3], price: parseFloat(p[4]) };
+        });
     }
 
-    // Слушаем команды от основного сайта
-    window.addEventListener('message', function(e) {
-        if (e.data.type === 'SET_BY_INDEX') {
-            const item = db[e.data.index];
-            if (item) {
-                current = item;
-                document.getElementById('itemName').value = item.name;
-                document.getElementById('unitLabel').innerText = "Количество (" + item.unit + ")";
-                document.getElementById('addBtn').disabled = false;
-                calculate();
-            }
+    window.addEventListener('message', e => {
+        if (e.data.type === 'SET_IDX') {
+            cur = db[e.data.idx];
+            document.getElementById('name').value = cur.name;
+            document.getElementById('uL').innerText = "Количество (" + cur.unit + ")";
+            document.getElementById('add').disabled = false;
+            calc();
         }
     });
 
-    function calculate() {
-        if (!current) return;
+    function calc() {
+        if (!cur) return;
         const q = parseFloat(document.getElementById('qty').value) || 0;
-        document.getElementById('wU').innerText = current.weight.toFixed(3);
-        document.getElementById('wT').innerText = (current.weight * q).toFixed(3);
-        document.getElementById('pT').innerText = (current.price * q).toLocaleString();
+        document.getElementById('wU').innerText = cur.weight.toFixed(3);
+        document.getElementById('wT').innerText = (cur.weight * q).toFixed(3);
+        document.getElementById('pT').innerText = (cur.price * q).toLocaleString();
     }
 
-    function sendData() {
-        const q = document.getElementById('qty').value;
-        const p = parseInt(document.getElementById('pT').innerText.replace(/\s/g, ''));
-        window.parent.postMessage({
-            type: 'ADD_TO_CART',
-            name: current.name,
-            qty: q,
-            price: p
-        }, '*');
+    function send() {
+        window.parent.postMessage({ type: 'ADDED', name: cur.name, price: (cur.price * document.getElementById('qty').value) }, '*');
     }
 
-    init();
+    load();
 </script>
 </body>
 </html>

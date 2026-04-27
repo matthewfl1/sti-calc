@@ -3,124 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        :root { --blue: #004a99; --border: #cbd5e1; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 12px; background: #fff; color: #1e293b; overflow: hidden; }
-        .w-card { border: 1.5px solid var(--blue); border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .label { display: block; font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
-        .input-group { position: relative; margin-bottom: 16px; }
-        input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.2s; }
-        input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,74,153,0.1); }
-        .dropdown { position: absolute; width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 0 0 6px 6px; z-index: 100; max-height: 220px; overflow-y: auto; display: none; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
-        .d-item { padding: 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9; line-height: 1.4; }
-        .d-item:hover { background: var(--bg); color: var(--blue); }
-        .calc-res { background: var(--bg); border-radius: 6px; padding: 14px; margin-top: 10px; border-left: 4px solid var(--blue); }
-        .res-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
-        .total-val { font-size: 24px; font-weight: 900; color: var(--blue); text-align: right; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
-        .btn-add { background: var(--blue); color: white; border: none; width: 100%; height: 44px; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: 15px; text-transform: uppercase; transition: 0.3s; }
-        .btn-add:hover { background: #003366; transform: translateY(-1px); }
-        .btn-add:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
-        .sync-info { font-size: 10px; text-align: center; margin-top: 10px; color: #94a3b8; font-weight: 600; }
+        :root { --blue: #004a99; --border: #cbd5e1; }
+        body { font-family: sans-serif; margin: 0; padding: 0; background: #fff; }
+        .box { border: 1px solid var(--border); padding: 15px; }
+        
+        .label { display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; }
+        .field { margin-bottom: 12px; position: relative; }
+        
+        input { width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 2px; font-size: 13px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--blue); }
+
+        .drop { position: absolute; width: 100%; background: #fff; border: 1px solid var(--border); z-index: 10; max-height: 150px; overflow-y: auto; display: none; }
+        .drop-item { padding: 8px 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .drop-item:hover { background: #f8fafc; color: var(--blue); }
+
+        .res-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; margin-top: 12px; }
+        .res-row { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 4px; }
+        .total-val { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+
+        .btn { background: var(--blue); color: #fff; border: none; width: 100%; height: 38px; font-size: 11px; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 12px; }
+        .btn:disabled { background: #94a3b8; }
     </style>
 </head>
 <body>
 
-<div class="w-card">
-    <div style="font-size: 14px; font-weight: 800; color: var(--blue); margin-bottom: 15px; text-align: center;">КОНФИГУРАТОР STI</div>
-    
-    <div class="input-group">
-        <label>Поиск продукции / ГОСТ</label>
-        <input type="text" id="findInput" placeholder="Подключение к базе..." disabled oninput="doSearch(this.value)">
-        <div id="dropBox" class="dropdown"></div>
+<div class="box">
+    <div class="field">
+        <label>Поиск / ГОСТ</label>
+        <input type="text" id="sIn" placeholder="Введите наименование..." oninput="search(this.value)">
+        <div id="drop" class="drop"></div>
     </div>
-
-    <div style="margin-bottom: 15px;">
-        <label id="qLabel">Количество</label>
-        <input type="number" id="qtyVal" value="1" min="1" oninput="recalc()">
+    <div class="field">
+        <label id="qLab">Количество</label>
+        <input type="number" id="qty" value="1" min="1" oninput="calc()">
     </div>
-
-    <div class="calc-res">
-        <div class="res-row"><span>Вес ед:</span> <b id="mUnit">0.000</b> кг</div>
-        <div class="res-row"><span>Общий вес:</span> <b id="mTotal">0.000</b> кг</div>
-        <div class="total-val"><span id="pTotal">0</span> ₽</div>
+    <div class="res-box">
+        <div class="res-row"><span>Вес ед:</span> <span id="wU">0.000</span> кг</div>
+        <div class="res-row"><span>Общий вес:</span> <span id="wT">0.000</span> кг</div>
+        <div class="total-val"><span id="pT">0</span> ₽</div>
     </div>
-
-    <button id="addBtn" class="btn-add" onclick="pushToSite()" disabled>Добавить в расчет</button>
-    <div id="statusTxt" class="sync-info">СИНХРОНИЗАЦИЯ...</div>
+    <button id="add" class="btn" onclick="add()" disabled>Добавить в расчет</button>
 </div>
 
 <script>
-    // Твоя ссылка, преобразованная в формат CSV для прямого чтения данных
-    const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
-    
-    let itemsDB = [];
-    let activeItem = null;
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
+    let db = [];
+    let cur = null;
 
-    async function fetchData() {
+    async function load() {
         try {
-            const r = await fetch(SHEET_CSV);
+            const r = await fetch(CSV_URL);
             const t = await r.text();
-            // Разбор строк таблицы (Категория, Наименование, Вес, Ед.изм, Цена)
-            itemsDB = t.split('\n').slice(1).map(l => {
+            db = t.split('\n').slice(1).map(l => {
                 const p = l.split(',');
-                return { 
-                    name: p[1]?.trim(), 
-                    weight: parseFloat(p[2]), 
-                    unit: p[3]?.trim(), 
-                    price: parseFloat(p[4]) 
-                };
+                return { name: p[1]?.trim(), weight: parseFloat(p[2]), unit: p[3]?.trim(), price: parseFloat(p[4]) };
             }).filter(i => i.name && !isNaN(i.price));
-
-            document.getElementById('findInput').disabled = false;
-            document.getElementById('findInput').placeholder = "Введите название или ГОСТ";
-            document.getElementById('statusTxt').innerText = "БАЗА ДАННЫХ ОБНОВЛЕНА";
-        } catch (e) {
-            document.getElementById('statusTxt').innerText = "ОШИБКА ДОСТУПА";
-        }
+        } catch (e) { console.error("DB Load Error"); }
     }
 
-    function doSearch(v) {
-        const d = document.getElementById('dropBox');
+    function search(v) {
+        const d = document.getElementById('drop');
         d.innerHTML = '';
         if (v.length < 1) { d.style.display = 'none'; return; }
-        const res = itemsDB.filter(i => i.name.toLowerCase().includes(v.toLowerCase()));
-        if (res.length > 0) {
-            res.forEach(i => {
+        const matches = db.filter(i => i.name.toLowerCase().includes(v.toLowerCase()));
+        if (matches.length > 0) {
+            matches.forEach(i => {
                 const div = document.createElement('div');
-                div.className = 'd-item';
+                div.className = 'drop-item';
                 div.innerText = i.name;
-                div.onclick = () => {
-                    activeItem = i;
-                    document.getElementById('findInput').value = i.name;
-                    d.style.display = 'none';
-                    document.getElementById('addBtn').disabled = false;
-                    recalc();
-                };
+                div.onclick = () => select(i);
                 d.appendChild(div);
             });
             d.style.display = 'block';
         } else { d.style.display = 'none'; }
     }
 
-    function recalc() {
-        if (!activeItem) return;
-        const q = parseFloat(document.getElementById('qtyVal').value) || 0;
-        document.getElementById('qLabel').innerText = "Количество (" + activeItem.unit + ")";
-        document.getElementById('mUnit').innerText = activeItem.weight.toFixed(3);
-        document.getElementById('mTotal').innerText = (activeItem.weight * q).toFixed(3);
-        document.getElementById('pTotal').innerText = (activeItem.price * q).toLocaleString();
+    function select(i) {
+        cur = i;
+        document.getElementById('sIn').value = i.name;
+        document.getElementById('drop').style.display = 'none';
+        document.getElementById('add').disabled = false;
+        calc();
     }
 
-    function pushToSite() {
-        if (!activeItem) return;
-        window.parent.postMessage({ 
-            type: 'ADD', 
-            name: activeItem.name, 
-            qty: document.getElementById('qtyVal').value, 
-            price: parseInt(document.getElementById('pTotal').innerText.replace(/\s/g, '')) 
-        }, '*');
+    function calc() {
+        if (!cur) return;
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        document.getElementById('qLab').innerText = "Количество (" + cur.unit + ")";
+        document.getElementById('wU').innerText = cur.weight.toFixed(3);
+        document.getElementById('wT').innerText = (cur.weight * q).toFixed(3);
+        document.getElementById('pT').innerText = (cur.price * q).toLocaleString();
     }
 
-    fetchData();
+    function add() {
+        window.parent.postMessage({ type: 'ADD', name: cur.name, qty: document.getElementById('qty').value, price: parseInt(document.getElementById('pT').innerText.replace(/\s/g, '')) }, '*');
+    }
+
+    window.addEventListener('message', e => {
+        if(e.data.type === 'SEL') {
+            const found = db.find(i => i.name.toLowerCase().includes(e.data.name.toLowerCase()));
+            if(found) select(found);
+        }
+    });
+
+    load();
 </script>
 </body>
 </html>

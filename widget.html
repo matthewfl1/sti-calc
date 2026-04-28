@@ -3,41 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 15px; color: #1e293b; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; color: #1e293b; background: #fff; }
         .label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
         .field { position: relative; margin-bottom: 12px; }
         input { width: 100%; height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 2px; font-size: 13px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #004a99; }
+        
+        /* Выпадающий список поиска */
         .dropdown { position: absolute; width: 100%; background: #fff; border: 1px solid #cbd5e1; z-index: 10; max-height: 150px; overflow-y: auto; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .drop-item { padding: 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
         .drop-item:hover { background: #f8fafc; color: #004a99; }
-        .res-pane { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; margin-top: 10px; }
-        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
-        .total { font-size: 24px; font-weight: 800; color: #004a99; text-align: right; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
-        .btn { background: #004a99; color: #fff; border: none; width: 100%; height: 44px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; margin-top: 15px; width: 100%; border-radius: 2px; }
-        .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        /* Блок текущего расчета */
+        .res-pane { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; margin-top: 10px; border-radius: 2px; }
+        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .btn { background: #004a99; color: #fff; border: none; width: 100%; height: 40px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-top: 10px; }
+        .btn:disabled { background: #cbd5e1; }
+
+        /* ИТОГОВАЯ СПЕЦИФИКАЦИЯ (Внутри калькулятора) */
+        .summary-box { margin-top: 20px; border-top: 2px solid #004a99; padding-top: 15px; }
+        .order-item { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #f1f5f9; }
+        .total-line { font-size: 20px; font-weight: 800; color: #004a99; text-align: right; margin: 10px 0; }
+        
+        /* Блок транспорта */
+        .truck-card { background: #eff6ff; padding: 10px; border: 1px solid #bfdbfe; border-radius: 2px; margin-top: 10px; }
+        .truck-name { font-size: 11px; font-weight: 800; color: #004a99; }
+        .load-bar { height: 5px; background: #dbeafe; margin: 6px 0; border-radius: 10px; overflow: hidden; }
+        .load-fill { height: 100%; background: #004a99; transition: 0.3s; }
+        .info-note { font-size: 9px; color: #94a3b8; line-height: 1.2; margin-top: 8px; }
     </style>
 </head>
 <body>
     <div class="field">
-        <label>Поиск или выбор товара</label>
-        <input type="text" id="sIn" placeholder="Начните вводить..." oninput="search(this.value)">
+        <label>Товар (Поиск или Выбор)</label>
+        <input type="text" id="sIn" placeholder="Введите название..." oninput="search(this.value)">
         <div id="drop" class="dropdown"></div>
     </div>
     <div class="field">
         <label id="uL">Количество</label>
         <input type="number" id="qty" value="1" min="1" oninput="calc()">
     </div>
+
     <div class="res-pane">
         <div class="row"><span>Вес ед.:</span> <b id="wU">0.000</b> кг</div>
-        <div class="row"><span>Вес итого:</span> <b id="wT">0.000</b> кг</div>
-        <div class="total"><span id="pT">0</span> ₽</div>
+        <div class="row"><span>Вес позиции:</span> <b id="wT">0.000</b> кг</div>
+        <button id="addBtn" class="btn" onclick="addToOrder()" disabled>Рассчитать</button>
     </div>
-    <button id="addBtn" class="btn" onclick="send()" disabled>Рассчитать</button>
+
+    <div class="summary-box" id="sumBox" style="display:none;">
+        <label>Спецификация заказа:</label>
+        <div id="orderList"></div>
+        
+        <div class="row" style="margin-top:10px;"><span>Общий вес:</span> <b id="totalW">0</b> кг</div>
+        <div class="total-line"><span id="totalSum">0</span> ₽*</div>
+
+        <div id="truck" class="truck-card" style="display:none;">
+            <div class="truck-name" id="tName">Транспорт</div>
+            <div class="load-bar"><div id="tFill" class="load-fill"></div></div>
+            <div style="font-size:9px; color:#64748b" id="tStat">Загрузка: 0%</div>
+        </div>
+
+        <div class="info-note">
+            * Цена может меняться. Для уточнения обратитесь к сотруднику ООО "СТРОЙТЕХИНВЕСТ".
+        </div>
+    </div>
 
 <script>
     const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
-    let db = [], cur = null;
+    let db = [], cur = null, totalW = 0, totalP = 0;
 
     async function load() {
         const r = await fetch(CSV);
@@ -56,13 +88,12 @@
         if (matches.length > 0) {
             matches.forEach(i => {
                 const div = document.createElement('div');
-                div.className = 'drop-item';
-                div.innerText = i.name;
+                div.className = 'drop-item'; div.innerText = i.name;
                 div.onclick = () => select(i);
                 d.appendChild(div);
             });
             d.style.display = 'block';
-        } else { d.style.display = 'none'; }
+        } else d.style.display = 'none';
     }
 
     function select(item) {
@@ -74,11 +105,9 @@
         calc();
     }
 
+    // Слушаем клики с сайта
     window.addEventListener('message', e => {
-        if (e.data.type === 'SET_IDX') {
-            const item = db[e.data.idx];
-            if (item) select(item);
-        }
+        if (e.data.type === 'SET_IDX') select(db[e.data.idx]);
     });
 
     function calc() {
@@ -86,29 +115,53 @@
         const q = parseFloat(document.getElementById('qty').value) || 0;
         document.getElementById('wU').innerText = cur.weight.toFixed(3);
         document.getElementById('wT').innerText = (cur.weight * q).toFixed(3);
-        document.getElementById('pT').innerText = Math.round(cur.price * q).toLocaleString();
     }
 
-    function send() {
+    function addToOrder() {
         const q = parseFloat(document.getElementById('qty').value) || 0;
-        window.parent.postMessage({ 
-            type: 'ADDED', 
-            name: cur.name, 
-            qty: q,
-            price: (cur.price * q),
-            weight: (cur.weight * q)
-        }, '*');
-        
-        // ПОЛНАЯ ОЧИСТКА
+        const itemW = cur.weight * q;
+        const itemP = cur.price * q;
+
+        // Показываем блок итогов
+        document.getElementById('sumBox').style.display = 'block';
+
+        // Добавляем в список
+        const div = document.createElement('div');
+        div.className = 'order-item';
+        div.innerHTML = `<span>${cur.name} (x${q})</span><b>${Math.round(itemP).toLocaleString()} ₽</b>`;
+        document.getElementById('orderList').appendChild(div);
+
+        // Обновляем общие итоги
+        totalW += itemW;
+        totalP += itemP;
+        document.getElementById('totalW').innerText = totalW.toFixed(2);
+        document.getElementById('totalSum').innerText = Math.round(totalP).toLocaleString();
+
+        updateTruck(totalW);
+
+        // Очистка полей выбора
         cur = null;
         document.getElementById('sIn').value = "";
         document.getElementById('qty').value = "1";
-        document.getElementById('wU').innerText = "0.000";
-        document.getElementById('wT').innerText = "0.000";
-        document.getElementById('pT').innerText = "0";
         document.getElementById('addBtn').disabled = true;
-        document.getElementById('uL').innerText = "Количество";
     }
+
+    function updateTruck(w) {
+        const t = document.getElementById('truck');
+        t.style.display = 'block';
+        let limit = 1500, title = "ГАЗель (1.5т)";
+        
+        if (w > 1500 && w <= 5000) { limit = 5000; title = "Валдай (5т)"; }
+        else if (w > 5000 && w <= 10000) { limit = 10000; title = "КАМАЗ (10т)"; }
+        else if (w > 10000) { limit = 20000; title = "Фура (20т)"; }
+
+        const p = Math.min((w / limit) * 100, 100);
+        document.getElementById('tName').innerText = title;
+        document.getElementById('tFill').style.width = p + "%";
+        document.getElementById('tStat').innerText = `Загрузка: ${p.toFixed(1)}% (${w.toFixed(0)} кг)`;
+        document.getElementById('tFill').style.background = p > 90 ? "#ef4444" : "#004a99";
+    }
+
     load();
 </script>
 </body>

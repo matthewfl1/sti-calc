@@ -3,44 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 15px; color: #1e293b; }
+        :root { --blue: #004a99; --border: #cbd5e1; --text: #1e293b; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; color: var(--text); background: #fff; box-sizing: border-box; border: 1px solid var(--border); }
+        
         .label { display: block; font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
         .field { position: relative; margin-bottom: 12px; }
-        input { width: 100%; height: 38px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 2px; font-size: 13px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #004a99; }
-        .dropdown { position: absolute; width: 100%; background: #fff; border: 1px solid #cbd5e1; z-index: 10; max-height: 150px; overflow-y: auto; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        input { width: 100%; height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 2px; font-size: 13px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--blue); }
+
+        /* Выпадающий список поиска */
+        .dropdown { position: absolute; width: 100%; background: #fff; border: 1px solid var(--border); z-index: 10; max-height: 150px; overflow-y: auto; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .drop-item { padding: 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
-        .drop-item:hover { background: #f8fafc; color: #004a99; }
-        .res-pane { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; margin-top: 10px; }
-        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
-        .total { font-size: 24px; font-weight: 800; color: #004a99; text-align: right; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
-        .btn { background: #004a99; color: #fff; border: none; width: 100%; height: 44px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 12px; margin-top: 15px; width: 100%; }
-        .btn:disabled { background: #cbd5e1; }
+        .drop-item:hover { background: #f8fafc; color: var(--blue); }
+
+        /* Блок текущего расчета */
+        .calc-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; margin-bottom: 10px; }
+        .row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+        .btn-main { background: var(--blue); color: #fff; border: none; width: 100%; height: 40px; font-weight: 700; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-bottom: 15px; }
+        .btn-main:disabled { background: #cbd5e1; }
+
+        /* Корзина (Спецификация) внутри виджета */
+        .spec-title { font-size: 10px; font-weight: 800; color: #64748b; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 8px; text-transform: uppercase; }
+        .order-list { max-height: 120px; overflow-y: auto; margin-bottom: 10px; }
+        .order-item { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px dotted #cbd5e1; }
+
+        /* Итоги и Транспорт */
+        .totals { border-top: 2px solid var(--blue); padding-top: 10px; }
+        .total-price { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; }
+        
+        .truck-card { background: #eff6ff; padding: 8px; border: 1px solid #bfdbfe; margin-top: 8px; font-size: 11px; }
+        .truck-bar { height: 4px; background: #dbeafe; margin: 6px 0; border-radius: 2px; }
+        .truck-fill { height: 100%; background: var(--blue); width: 0%; transition: 0.3s; }
+        
+        .note { font-size: 9px; color: #94a3b8; margin-top: 8px; line-height: 1.2; }
     </style>
 </head>
 <body>
+
     <div class="field">
-        <label>Поиск или выбор товара</label>
-        <input type="text" id="sIn" placeholder="Введите название..." oninput="search(this.value)">
+        <label>Поиск товара (из базы)</label>
+        <input type="text" id="sIn" placeholder="Начните вводить название..." oninput="search(this.value)">
         <div id="drop" class="dropdown"></div>
     </div>
+
     <div class="field">
         <label id="uL">Количество</label>
-        <input type="number" id="qty" value="1" min="1" oninput="calc()">
+        <input type="number" id="qty" value="1" min="1" oninput="recalc()">
     </div>
-    <div class="res-pane">
+
+    <div class="calc-box">
         <div class="row"><span>Вес ед.:</span> <b id="wU">0.000</b> кг</div>
-        <div class="row"><span>Общий вес:</span> <b id="wT">0.000</b> кг</div>
-        <div class="total"><span id="pT">0</span> ₽</div>
+        <div class="row"><span>Итого вес:</span> <b id="wT">0.000</b> кг</div>
+        <div class="total-price" style="font-size: 16px;"><span id="pT">0</span> ₽</div>
     </div>
-    <button id="addBtn" class="btn" onclick="send()" disabled>Рассчитать</button>
+
+    <button id="addBtn" class="btn-main" onclick="addToOrder()" disabled>Рассчитать и добавить</button>
+
+    <!-- ВНУТРЕННЯЯ КОРЗИНА -->
+    <div class="spec-title">Спецификация заказа</div>
+    <div id="orderList" class="order-list"></div>
+
+    <div class="totals">
+        <div class="row"><span>Общий вес:</span> <b id="finalW">0</b> кг</div>
+        <div class="total-price"><span id="finalP">0</span> ₽*</div>
+        
+        <div id="truckBox" class="truck-card" style="display:none">
+            <div style="font-weight:700" id="tName">Транспорт</div>
+            <div class="truck-bar"><div id="tFill" class="truck-fill"></div></div>
+            <div style="font-size:9px" id="tStatus">Загрузка: 0%</div>
+        </div>
+
+        <div class="note">* Цена может меняться. Для уточнения стоимости обратитесь к сотруднику.</div>
+    </div>
 
 <script>
-    const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
-    let db = [], cur = null;
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
+    let db = [], curItem = null;
+    let totalS = 0, totalW = 0;
 
-    async function load() {
-        const r = await fetch(CSV);
+    // Слушаем сигналы от сайта (если вдруг захочешь кликать на сайте)
+    window.addEventListener('message', e => {
+        if (e.data.type === 'SET_IDX') select(db[e.data.idx]);
+    });
+
+    async function loadDB() {
+        const r = await fetch(CSV_URL);
         const t = await r.text();
         db = t.split('\n').slice(1).map(l => {
             const p = l.split(',');
@@ -49,62 +97,83 @@
     }
 
     function search(v) {
-        const d = document.getElementById('drop');
-        d.innerHTML = '';
+        const d = document.getElementById('drop'); d.innerHTML = '';
         if (v.length < 1) { d.style.display = 'none'; return; }
         const matches = db.filter(i => i.name.toLowerCase().includes(v.toLowerCase()));
-        if (matches.length > 0) {
-            matches.forEach(i => {
-                const div = document.createElement('div');
-                div.className = 'drop-item'; div.innerText = i.name;
-                div.onclick = () => select(i);
-                d.appendChild(div);
-            });
-            d.style.display = 'block';
-        } else d.style.display = 'none';
+        matches.forEach(i => {
+            const item = document.createElement('div');
+            item.className = 'drop-item';
+            item.innerText = i.name;
+            item.onclick = () => select(i);
+            d.appendChild(item);
+        });
+        d.style.display = matches.length ? 'block' : 'none';
     }
 
     function select(item) {
-        cur = item;
+        if (!item) return;
+        curItem = item;
         document.getElementById('sIn').value = item.name;
         document.getElementById('uL').innerText = "Количество (" + item.unit + ")";
         document.getElementById('drop').style.display = 'none';
         document.getElementById('addBtn').disabled = false;
-        calc();
+        recalc();
     }
 
-    window.addEventListener('message', e => {
-        if (e.data.type === 'SET_IDX') select(db[e.data.idx]);
-    });
-
-    function calc() {
-        if (!cur) return;
+    function recalc() {
+        if (!curItem) return;
         const q = parseFloat(document.getElementById('qty').value) || 0;
-        document.getElementById('wU').innerText = cur.weight.toFixed(3);
-        document.getElementById('wT').innerText = (cur.weight * q).toFixed(3);
-        document.getElementById('pT').innerText = Math.round(cur.price * q).toLocaleString();
+        document.getElementById('wU').innerText = curItem.weight.toFixed(3);
+        document.getElementById('wT').innerText = (curItem.weight * q).toFixed(3);
+        document.getElementById('pT').innerText = Math.round(curItem.price * q).toLocaleString();
     }
 
-    function send() {
+    function addToOrder() {
         const q = parseFloat(document.getElementById('qty').value) || 0;
-        window.parent.postMessage({ 
-            type: 'ADDED', 
-            name: cur.name, 
-            qty: q,
-            price: (cur.price * q),
-            weight: (cur.weight * q)
-        }, '*');
-        
-        // СБРОС ДЛЯ НОВОГО ВЫБОРА
-        cur = null;
-        document.getElementById('sIn').value = "";
-        document.getElementById('qty').value = "1";
-        document.getElementById('wU').innerText = "0.000";
-        document.getElementById('wT').innerText = "0.000";
-        document.getElementById('pT').innerText = "0";
+        const p = curItem.price * q;
+        const w = curItem.weight * q;
+
+        // Добавляем в список
+        const div = document.createElement('div');
+        div.className = 'order-item';
+        div.innerHTML = `<span>${curItem.name} (x${q})</span><b>${Math.round(p).toLocaleString()} ₽</b>`;
+        document.getElementById('orderList').appendChild(div);
+
+        // Считаем итоги
+        totalS += p;
+        totalW += w;
+        document.getElementById('finalP').innerText = Math.round(totalS).toLocaleString();
+        document.getElementById('finalW').innerText = totalW.toFixed(2);
+
+        updateTruck(totalW);
+
+        // Сброс полей
+        curItem = null;
+        document.getElementById('sIn').value = '';
         document.getElementById('addBtn').disabled = true;
+        document.getElementById('wU').innerText = '0.000';
+        document.getElementById('wT').innerText = '0.000';
+        document.getElementById('pT').innerText = '0';
     }
-    load();
+
+    function updateTruck(w) {
+        const box = document.getElementById('truckBox');
+        if (w <= 0) return;
+        box.style.display = 'block';
+        
+        let limit = 1500, tName = "ГАЗель (1.5т)";
+        if (w > 1500 && w <= 5000) { limit = 5000; tName = "Валдай (5т)"; }
+        else if (w > 5000 && w <= 10000) { limit = 10000; tName = "КАМАЗ (10т)"; }
+        else if (w > 10000) { limit = 20000; tName = "Фура (20т)"; }
+
+        const perc = Math.min((w / limit) * 100, 100);
+        document.getElementById('tName').innerText = tName;
+        document.getElementById('tFill').style.width = perc + "%";
+        document.getElementById('tStatus').innerText = `Загрузка: ${perc.toFixed(1)}% (${w.toFixed(0)} кг)`;
+        document.getElementById('tFill').style.background = perc > 90 ? "#ef4444" : "#004a99";
+    }
+
+    loadDB();
 </script>
 </body>
 </html>

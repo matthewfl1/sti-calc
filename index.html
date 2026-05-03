@@ -2,115 +2,19 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ООО СТРОЙТЕХИНВЕСТ | Управление логистикой</title>
+    <title>ООО СТРОЙТЕХИНВЕСТ | Калькулятор</title>
     <style>
-        :root { --blue: #004a99; --text: #1e293b; --bg: #f8fafc; --border: #cbd5e1; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f1f5f9; margin: 0; color: var(--text); }
-        header { background: #fff; border-bottom: 1px solid var(--border); padding: 12px 5%; display: flex; align-items: center; }
-        .logo { font-size: 18px; font-weight: 800; color: var(--blue); }
-        .container { display: grid; grid-template-columns: 1fr 380px; gap: 24px; padding: 20px 5%; max-width: 1400px; margin: auto; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-        .card { background: #fff; padding: 15px; border: 1px solid var(--border); border-radius: 2px; display: flex; flex-direction: column; justify-content: space-between; }
-        .card h4 { margin: 0 0 8px; font-size: 12px; color: var(--blue); text-transform: uppercase; }
-        .card p { font-size: 11px; color: #64748b; margin-bottom: 12px; }
-        .btn-pick { width: 100%; padding: 8px; background: #fff; border: 1px solid var(--blue); color: var(--blue); font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
-        .btn-pick:hover { background: var(--blue); color: #fff; }
-        iframe { width: 100%; height: 460px; border: 1px solid var(--border); background: #fff; margin-bottom: 15px; }
-        .summary { background: #fff; border: 1px solid var(--border); padding: 18px; }
-        .order-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .total-block { margin-top: 15px; padding-top: 10px; border-top: 2px solid var(--blue); }
-        .price-val { font-size: 22px; font-weight: 800; color: var(--blue); text-align: right; }
-        .delivery-card { background: #eff6ff; padding: 12px; margin-top: 10px; border: 1px solid #bfdbfe; border-radius: 2px; }
-        .truck-name { font-size: 12px; font-weight: 800; color: var(--blue); margin-bottom: 4px; }
-        .load-bar { height: 6px; background: #dbeafe; margin-top: 8px; border-radius: 10px; overflow: hidden; }
-        .load-fill { height: 100%; background: var(--blue); transition: 0.3s; }
-        .info-note { font-size: 10px; color: #94a3b8; margin-top: 10px; line-height: 1.4; }
+        body { font-family: sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 50px; }
+        .phone-mockup { width: 375px; height: 700px; background: #fff; border: 10px solid #1e293b; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
-    <header><div class="logo">СТРОЙТЕХИНВЕСТ</div></header>
-    <div class="container">
-        <main><div id="catalog" class="grid">Загрузка каталога...</div></main>
-        <aside>
-            <iframe id="calcFrame" src="widget.html"></iframe>
-            <div class="summary">
-                <div id="orderList"></div>
-                <div class="total-block">
-                    <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                        <span>Итого вес:</span> <b id="totalW">0</b> кг
-                    </div>
-                    <div class="price-val"><span id="totalSum">0</span> ₽*</div>
-                    
-                    <div id="truckBlock" class="delivery-card" style="display:none;">
-                        <div class="truck-name" id="tName">Транспорт</div>
-                        <div class="load-bar"><div id="tFill" class="load-fill" style="width: 0%"></div></div>
-                        <div style="font-size:10px; color:#475569; margin-top:5px;" id="tStatus">Загрузка: 0%</div>
-                    </div>
 
-                    <div class="info-note">
-                        * Цена может меняться. Чтобы узнать точную стоимость, лучше обратиться к сотруднику.
-                    </div>
-                </div>
-            </div>
-        </aside>
+    <!-- Пример того, как калькулятор вставляется на любой сайт -->
+    <div class="phone-mockup">
+        <iframe src="widget.html"></iframe>
     </div>
 
-    <script>
-        const CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
-        let totalSum = 0, totalWeight = 0;
-
-        async function load() {
-            const res = await fetch(CSV);
-            const text = await res.text();
-            const rows = text.split('\n').slice(1);
-            const catalog = document.getElementById('catalog');
-            catalog.innerHTML = '';
-            rows.forEach((row, index) => {
-                const cols = row.split(',');
-                if (cols[1]) {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `<div><h4>${cols[1]}</h4><p>Вес: ${cols[2]} кг/${cols[3]}</p></div>
-                                     <button class="btn-pick" onclick="pick(${index})">Выбрать</button>`;
-                    catalog.appendChild(card);
-                }
-            });
-        }
-
-        function pick(idx) {
-            document.getElementById('calcFrame').contentWindow.postMessage({ type: 'SET_IDX', idx: idx }, '*');
-        }
-
-        window.addEventListener('message', e => {
-            if (e.data.type === 'ADDED') {
-                const div = document.createElement('div');
-                div.className = 'order-item';
-                div.innerHTML = `<span>${e.data.name} (x${e.data.qty})</span><b>${e.data.price.toLocaleString()} ₽</b>`;
-                document.getElementById('orderList').appendChild(div);
-                
-                totalSum += e.data.price;
-                totalWeight += e.data.weight;
-                document.getElementById('totalSum').innerText = totalSum.toLocaleString();
-                document.getElementById('totalW').innerText = totalWeight.toFixed(2);
-                updateTruck(totalWeight);
-            }
-        });
-
-        function updateTruck(w) {
-            const block = document.getElementById('truckBlock');
-            if (w <= 0) { block.style.display = 'none'; return; }
-            block.style.display = 'block';
-            let limit = 1500, title = "ГАЗель";
-            if (w > 1500 && w <= 5000) { limit = 5000; title = "Валдай"; }
-            else if (w > 5000 && w <= 10000) { limit = 10000; title = "КАМАЗ"; }
-            else if (w > 10000) { limit = 20000; title = "Фура"; }
-            const p = Math.min((w / limit) * 100, 100);
-            document.getElementById('tName').innerText = title + " (" + (limit/1000) + "т)";
-            document.getElementById('tFill').style.width = p + "%";
-            document.getElementById('tStatus').innerText = `Загрузка: ${p.toFixed(1)}% (${w.toFixed(0)} кг)`;
-            document.getElementById('tFill').style.background = p > 90 ? "#ef4444" : "#004a99";
-        }
-        load();
-    </script>
 </body>
 </html>

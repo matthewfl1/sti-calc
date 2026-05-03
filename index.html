@@ -2,19 +2,84 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ООО СТРОЙТЕХИНВЕСТ | Калькулятор</title>
+    <title>ООО СТРОЙТЕХИНВЕСТ | Управление логистикой</title>
     <style>
-        body { font-family: sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 50px; }
-        .phone-mockup { width: 375px; height: 700px; background: #fff; border: 10px solid #1e293b; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
-        iframe { width: 100%; height: 100%; border: none; }
+        :root { --blue: #004a99; --bg: #f1f5f9; --border: #cbd5e1; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Левая часть: Каталог */
+        .catalog { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; align-content: start; }
+        
+        .card { background: #fff; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.2s; }
+        .card:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card-title { font-size: 13px; font-weight: 700; color: var(--blue); margin-bottom: 8px; height: 40px; overflow: hidden; }
+        .card-info { font-size: 11px; color: #64748b; margin-bottom: 15px; }
+        .btn-select { background: #fff; border: 1px solid var(--blue); color: var(--blue); padding: 8px; font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
+        .btn-select:hover { background: var(--blue); color: #fff; }
+
+        /* Правая часть: Фиксированный виджет */
+        .sidebar { width: 400px; background: #fff; border-left: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.05); }
+        .sidebar-header { padding: 15px; background: var(--blue); color: #fff; font-size: 14px; font-weight: 600; }
+        iframe { flex: 1; border: none; width: 100%; }
     </style>
 </head>
 <body>
 
-    <!-- Пример того, как калькулятор вставляется на любой сайт -->
-    <div class="phone-mockup">
-        <iframe src="widget.html"></iframe>
+    <!-- Сетка товаров -->
+    <div class="catalog" id="catalog">
+        <!-- Карточки генерируются скриптом -->
     </div>
 
+    <!-- Панель калькулятора -->
+    <div class="sidebar">
+        <div class="sidebar-header">Калькулятор заказа и веса</div>
+        <iframe src="widget.html" id="calcWidget"></iframe>
+    </div>
+
+<script>
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
+    let database = [];
+
+    async function init() {
+        try {
+            const response = await fetch(CSV_URL);
+            const data = await response.text();
+            // Парсим CSV (пропускаем заголовок)
+            database = data.split('\n').slice(1).map(line => {
+                const col = line.split(',');
+                return {
+                    name: col[1]?.trim(),
+                    weight: col[2]?.trim(),
+                    unit: col[3]?.trim()
+                };
+            }).filter(item => item.name);
+
+            renderCards(database);
+        } catch (e) {
+            console.error("Ошибка загрузки БД:", e);
+        }
+    }
+
+    function renderCards(items) {
+        const container = document.getElementById('catalog');
+        container.innerHTML = items.map((item, index) => `
+            <div class="card">
+                <div>
+                    <div class="card-title">${item.name}</div>
+                    <div class="card-info">Вес: ${item.weight} кг/${item.unit}</div>
+                </div>
+                <button class="btn-select" onclick="sendToWidget(${index})">Выбрать</button>
+            </div>
+        `).join('');
+    }
+
+    function sendToWidget(index) {
+        const widget = document.getElementById('calcWidget').contentWindow;
+        // Отправляем сигнал в виджет, что выбран товар с таким-то индексом
+        widget.postMessage({ type: 'SET_IDX', idx: index }, '*');
+    }
+
+    init();
+</script>
 </body>
 </html>

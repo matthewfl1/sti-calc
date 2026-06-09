@@ -26,9 +26,14 @@
         /* Корзина (Спецификация) внутри виджета */
         .spec-title { font-size: 10px; font-weight: 800; color: #64748b; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 8px; text-transform: uppercase; }
         .order-list { max-height: 120px; overflow-y: auto; margin-bottom: 10px; }
-        .order-item { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px dotted #cbd5e1; }
+        .order-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 4px 0; border-bottom: 1px dotted #cbd5e1; }
+        
+        /* Стили для удаления элемента */
+        .item-right { display: flex; align-items: center; gap: 8px; }
+        .btn-delete { color: #ef4444; font-size: 14px; font-weight: 700; cursor: pointer; border: none; background: none; padding: 0 2px; line-height: 1; transition: 0.1s; }
+        .btn-delete:hover { transform: scale(1.2); }
 
-        /* Итоги и Транспорт */
+        /* Итоги и Траснпорт */
         .totals { border-top: 2px solid var(--blue); padding-top: 10px; }
         .total-price { font-size: 20px; font-weight: 800; color: var(--blue); text-align: right; }
         
@@ -49,7 +54,9 @@
 
     <div class="field">
         <label id="uL">Количество</label>
-        <input type="number" id="qty" value="1" min="1" oninput="recalc()">
+        <input type="number" id="qty" value="1" min="1" step="1" 
+               onkeydown="if(['.', ',', '-', '+', 'e', 'E'].includes(event.key)) event.preventDefault();" 
+               oninput="recalc()">
     </div>
 
     <div class="calc-box">
@@ -60,7 +67,6 @@
 
     <button id="addBtn" class="btn-main" onclick="addToOrder()" disabled>Рассчитать и добавить</button>
 
-    <!-- ВНУТРЕННЯЯ КОРЗИНА -->
     <div class="spec-title">Спецификация заказа</div>
     <div id="orderList" class="order-list"></div>
 
@@ -80,9 +86,12 @@
 <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSYKUmtE5Idl6Jb5Le2Xrus-AV-9gdcDPHckyejXN4WKrfdR7qsMQmdv7mDoxXYVfwdFKQfBBTBeLsa/pub?output=csv';
     let db = [], curItem = null;
-    let totalS = 0, totalW = 0;
+    
+    // Структура для хранения товаров в корзине
+    let orderItems = []; 
+    let itemIdCounter = 0;
 
-    // Слушаем сигналы от сайта (если вдруг захочешь кликать на сайте)
+    // Слушаем сигналы от сайта
     window.addEventListener('message', e => {
         if (e.data.type === 'SET_IDX') select(db[e.data.idx]);
     });
@@ -122,43 +131,86 @@
 
     function recalc() {
         if (!curItem) return;
-        const q = parseFloat(document.getElementById('qty').value) || 0;
+        const q = parseInt(document.getElementById('qty').value, 10) || 0;
         document.getElementById('wU').innerText = curItem.weight.toFixed(3);
         document.getElementById('wT').innerText = (curItem.weight * q).toFixed(3);
         document.getElementById('pT').innerText = Math.round(curItem.price * q).toLocaleString();
     }
 
     function addToOrder() {
-        const q = parseFloat(document.getElementById('qty').value) || 0;
+        const q = parseInt(document.getElementById('qty').value, 10) || 0;
+        if (q <= 0 || !curItem) return;
+
         const p = curItem.price * q;
         const w = curItem.weight * q;
 
-        // Добавляем в список
-        const div = document.createElement('div');
-        div.className = 'order-item';
-        div.innerHTML = `<span>${curItem.name} (x${q})</span><b>${Math.round(p).toLocaleString()} ₽</b>`;
-        document.getElementById('orderList').appendChild(div);
+        // Сохраняем элемент в массив корзины
+        orderItems.push({
+            id: itemIdCounter++,
+            name: curItem.name,
+            qty: q,
+            price: p,
+            weight: w
+        });
 
-        // Считаем итоги
-        totalS += p;
-        totalW += w;
-        document.getElementById('finalP').innerText = Math.round(totalS).toLocaleString();
-        document.getElementById('finalW').innerText = totalW.toFixed(2);
+        // Обновляем отображение и пересчитываем общие итоги
+        renderOrder();
+        calculateTotals();
 
-        updateTruck(totalW);
-
-        // Сброс полей
+        // Сброс полей (Количество сбрасывается в 1, как в исходном состоянии)
         curItem = null;
         document.getElementById('sIn').value = '';
+        document.getElementById('qty').value = '1'; 
         document.getElementById('addBtn').disabled = true;
         document.getElementById('wU').innerText = '0.000';
         document.getElementById('wT').innerText = '0.000';
         document.getElementById('pT').innerText = '0';
     }
 
+    // Функция отрисовки элементов спецификации
+    function renderOrder() {
+        const orderList = document.getElementById('orderList');
+        orderList.innerHTML = orderItems.map(item => `
+            <div class="order-item">
+                <span>${item.name} (x${item.qty})</span>
+                <div class="item-right">
+                    <b>${Math.round(item.price).toLocaleString()} ₽</b>
+                    <button class="btn-delete" onclick="removeItem(${item.id})" title="Удалить из заказа">&times;</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Функция удаления элемента из спецификации
+    function removeItem(id) {
+        orderItems = orderItems.filter(item => item.id !== id);
+        renderOrder();
+        calculateTotals();
+    }
+
+    // Функция расчета общих итогов на основе массива элементов
+    function calculateTotals() {
+        let totalS = 0;
+        let totalW = 0;
+
+        orderItems.forEach(item => {
+            totalS += item.price;
+            totalW += item.weight;
+        });
+
+        document.getElementById('finalP').innerText = Math.round(totalS).toLocaleString();
+        document.getElementById('finalW').innerText = totalW.toFixed(2);
+
+        // Если корзина пуста — скрываем блок транспорта
+        if (totalW <= 0) {
+            document.getElementById('truckBox').style.display = 'none';
+        } else {
+            updateTruck(totalW);
+        }
+    }
+
     function updateTruck(w) {
         const box = document.getElementById('truckBox');
-        if (w <= 0) return;
         box.style.display = 'block';
         
         let limit = 1500, tName = "ГАЗель (1.5т)";
